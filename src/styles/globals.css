@@ -1,0 +1,441 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: var(--font-orbitron), var(--font-geist-sans), "Eurostile", "Eurostile Extended", 
+    "Arial Black", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", "Monaco", "Inconsolata", 
+    "Roboto Mono", "Source Code Pro", "Ubuntu Mono", "Droid Sans Mono",
+    "Courier New", monospace;
+  --font-terminal: "JetBrains Mono", "Fira Code", "SF Mono", "Monaco", 
+    "Courier New", monospace;
+  --font-sc2: var(--font-orbitron), "Eurostile", "Eurostile Extended", "Arial Black", 
+    "Impact", sans-serif;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.375rem;
+  /* SC2 Terminal Theme - Light fallback (rarely used) */
+  --background: oklch(0.92 0.02 240);
+  --foreground: oklch(0.15 0.05 240);
+  --card: oklch(0.88 0.02 240);
+  --card-foreground: oklch(0.15 0.05 240);
+  --popover: oklch(0.88 0.02 240);
+  --popover-foreground: oklch(0.15 0.05 240);
+  --primary: oklch(0.6 0.25 210);
+  --primary-foreground: oklch(0.95 0.02 240);
+  --secondary: oklch(0.8 0.05 240);
+  --secondary-foreground: oklch(0.2 0.05 240);
+  --muted: oklch(0.85 0.02 240);
+  --muted-foreground: oklch(0.5 0.03 240);
+  --accent: oklch(0.75 0.15 190);
+  --accent-foreground: oklch(0.1 0.05 240);
+  --destructive: oklch(0.65 0.25 15);
+  --border: oklch(0.8 0.03 240);
+  --input: oklch(0.8 0.03 240);
+  --ring: oklch(0.6 0.25 200);
+  --chart-1: oklch(0.6 0.25 210);
+  --chart-2: oklch(0.55 0.2 180);
+  --chart-3: oklch(0.45 0.15 220);
+  --chart-4: oklch(0.7 0.2 190);
+  --chart-5: oklch(0.5 0.25 200);
+  --sidebar: oklch(0.85 0.02 240);
+  --sidebar-foreground: oklch(0.15 0.05 240);
+  --sidebar-primary: oklch(0.6 0.25 210);
+  --sidebar-primary-foreground: oklch(0.95 0.02 240);
+  --sidebar-accent: oklch(0.75 0.15 190);
+  --sidebar-accent-foreground: oklch(0.1 0.05 240);
+  --sidebar-border: oklch(0.8 0.03 240);
+  --sidebar-ring: oklch(0.6 0.25 200);
+}
+
+.dark {
+  /* SC2 Authentic Theme - Darker Blues & Light Blue Neon */
+  --background: oklch(0.05 0.02 240); /* Very dark navy, almost black */
+  --foreground: oklch(0.85 0.15 200); /* Light blue neon text */
+  --card: oklch(0.08 0.03 235); /* Dark navy card backgrounds */
+  --card-foreground: oklch(0.85 0.15 200);
+  --popover: oklch(0.06 0.02 240);
+  --popover-foreground: oklch(0.85 0.15 200);
+  --primary: oklch(0.75 0.18 200); /* Light SC2 blue */
+  --primary-foreground: oklch(0.03 0.01 240);
+  --secondary: oklch(0.12 0.04 225); /* Darker navy for secondary elements */
+  --secondary-foreground: oklch(0.8 0.12 200);
+  --muted: oklch(0.1 0.03 230);
+  --muted-foreground: oklch(0.6 0.1 200); /* Dimmed light blue */
+  --accent: oklch(0.8 0.2 200); /* Bright light blue for accents */
+  --accent-foreground: oklch(0.03 0.01 240);
+  --destructive: oklch(0.65 0.25 15); /* Orange-red for destructive actions */
+  --border: oklch(0.75 0.15 200 / 80%); /* Light blue neon borders */
+  --input: oklch(0.1 0.04 235 / 90%); /* Input background */
+  --ring: oklch(0.8 0.2 200); /* Focus ring light blue */
+  --chart-1: oklch(0.75 0.18 200); /* Primary light blue */
+  --chart-2: oklch(0.7 0.2 180); /* Cyan */
+  --chart-3: oklch(0.65 0.15 220); /* Blue-purple */
+  --chart-4: oklch(0.6 0.18 160); /* Teal */
+  --chart-5: oklch(0.8 0.16 190); /* Light cyan */
+  --sidebar: oklch(0.07 0.02 235);
+  --sidebar-foreground: oklch(0.85 0.15 200);
+  --sidebar-primary: oklch(0.75 0.18 200);
+  --sidebar-primary-foreground: oklch(0.03 0.01 240);
+  --sidebar-accent: oklch(0.12 0.04 225);
+  --sidebar-accent-foreground: oklch(0.8 0.12 200);
+  --sidebar-border: oklch(0.75 0.15 200 / 60%);
+  --sidebar-ring: oklch(0.8 0.2 200);
+  
+  /* SC2 Neon Glow Effects */
+  --neon-text-glow: 
+    0 0 2px oklch(0.8 0.2 200),
+    0 0 5px oklch(0.8 0.2 200 / 60%),
+    0 0 10px oklch(0.8 0.2 200 / 30%);
+  --neon-border-glow: 
+    0 0 3px oklch(0.8 0.2 200),
+    0 0 8px oklch(0.8 0.2 200 / 40%),
+    inset 0 0 3px oklch(0.8 0.2 200 / 20%);
+  --neon-strong-glow: 
+    0 0 5px oklch(0.8 0.2 200),
+    0 0 15px oklch(0.8 0.2 200 / 50%),
+    0 0 25px oklch(0.8 0.2 200 / 20%);
+  
+  /* CRT Effect Controls - Easy to adjust 
+   * 
+   * PRESETS:
+   * OFF:     scanline: 0,    flicker: 1,    curvature: 0px,  noise: 0,    glow: 0px
+   * SUBTLE:  scanline: 0.02, flicker: 0.98, curvature: 6px,  noise: 0.01, glow: 10px
+   * MEDIUM:  scanline: 0.05, flicker: 0.95, curvature: 12px, noise: 0.03, glow: 20px
+   * STRONG:  scanline: 0.1,  flicker: 0.9,  curvature: 20px, noise: 0.08, glow: 35px
+   */
+  --crt-scanline-opacity: 0.1; /* 0 = off, 0.1 = strong */
+  --crt-flicker-intensity: 0.76; /* 1 = no flicker, 0.8 = strong flicker */
+  --crt-curvature: 8px; /* border-radius for screen curve */
+  --crt-noise-opacity: 0.2; /* background noise/grain */
+  --crt-glow-strength: 150px; /* screen glow radius */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sc2);
+    font-weight: 500;
+    letter-spacing: 0.025em;
+    text-shadow: var(--neon-text-glow);
+  }
+  
+  /* SC2-style headings */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sc2);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  
+  /* Terminal elements keep monospace */
+  code, pre, kbd, samp, .font-mono {
+    font-family: var(--font-terminal) !important;
+  }
+  
+  /* Neon text effects */
+  .neon-text {
+    text-shadow: var(--neon-text-glow);
+  }
+  
+  .neon-text-strong {
+    text-shadow: var(--neon-strong-glow);
+  }
+  
+  /* Neon border effects */
+  .neon-border {
+    box-shadow: var(--neon-border-glow);
+    border: 1px solid oklch(0.8 0.2 200);
+  }
+  
+  .neon-border-strong {
+    box-shadow: var(--neon-strong-glow);
+    border: 1px solid oklch(0.8 0.2 200);
+  }
+  
+  /* CRT scan lines - static overlay with subtle pulse */
+  .crt-lines::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      oklch(0.8 0.2 200 / var(--crt-scanline-opacity)) 2px,
+      oklch(0.8 0.2 200 / var(--crt-scanline-opacity)) 3px,
+      transparent 3px,
+      transparent 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+    animation: scanline-pulse 4s ease-in-out infinite;
+  }
+  
+  /* CRT screen curvature and glow */
+  .crt-screen {
+    border-radius: var(--crt-curvature);
+    box-shadow: 
+      inset 0 0 0 1px oklch(0.8 0.2 200 / 20%),
+      0 0 var(--crt-glow-strength) oklch(0.8 0.2 200 / var(--crt-noise-opacity));
+  }
+  
+  /* CRT noise overlay */
+  .crt-noise::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: 
+      repeating-conic-gradient(
+        from 0deg at 50% 50%,
+        transparent 0deg,
+        oklch(0.8 0.2 200 / var(--crt-noise-opacity)) 1deg,
+        transparent 2deg
+      ),
+      repeating-linear-gradient(
+        45deg,
+        transparent 0px,
+        oklch(0.8 0.2 200 / calc(var(--crt-noise-opacity) / 3)) 1px,
+        transparent 2px
+      );
+    pointer-events: none;
+    z-index: 999;
+    mix-blend-mode: overlay;
+    /* Removed terminal-flicker to prevent conflicts and white flashing */
+  }
+  
+  /* Terminal animations */
+  @keyframes terminal-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  
+  @keyframes terminal-flicker {
+    0%, 100% { opacity: 1; }
+    98% { opacity: 1; }
+    99% { opacity: var(--crt-flicker-intensity); }
+  }
+  
+  @keyframes scanline-pulse {
+    0%, 100% { 
+      opacity: 1; 
+    }
+    50% { 
+      opacity: 0.7; 
+    }
+  }
+  
+  @keyframes data-stream {
+    0% { transform: translateX(-100%); opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: translateX(100%); opacity: 0; }
+  }
+  
+  @keyframes terminal-boot {
+    0% { 
+      opacity: 0; 
+      transform: scale(0.8); 
+      filter: brightness(0.3);
+    }
+    50% { 
+      opacity: 0.8; 
+      transform: scale(1.02); 
+      filter: brightness(1.2);
+    }
+    100% { 
+      opacity: 1; 
+      transform: scale(1); 
+      filter: brightness(1);
+    }
+  }
+  
+  /* Apply CRT effects to the entire app */
+  html.crt-mode {
+    /* Removed terminal-flicker to prevent white flashing */
+  }
+  
+  html.crt-mode body {
+    animation: terminal-boot 1.5s ease-out;
+  }
+  
+  /* Terminal cursor */
+  .terminal-cursor::after {
+    content: '█';
+    animation: terminal-pulse 1s infinite;
+    color: oklch(0.8 0.2 200);
+    text-shadow: var(--neon-text-glow);
+  }
+  
+  /* Glitch effect for errors */
+  @keyframes glitch {
+    0% { transform: translate(0); }
+    20% { transform: translate(-2px, 2px); }
+    40% { transform: translate(-2px, -2px); }
+    60% { transform: translate(2px, 2px); }
+    80% { transform: translate(2px, -2px); }
+    100% { transform: translate(0); }
+  }
+  
+  .glitch-effect {
+    animation: glitch 0.3s infinite;
+  }
+  
+  /* SC2 Theme Global Component Overrides */
+  
+  /* Progress bars - energy meter style */
+  [role="progressbar"] {
+    background: oklch(0.15 0.06 230);
+    border: 1px solid oklch(0.25 0.08 220 / 60%);
+    border-radius: 2px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px oklch(0.05 0.02 240 / 50%);
+  }
+  
+  [role="progressbar"] > div {
+    background: linear-gradient(90deg, 
+      oklch(0.6 0.25 180), 
+      oklch(0.7 0.2 200),
+      oklch(0.6 0.25 180));
+    box-shadow: 0 0 10px oklch(0.6 0.25 180 / 50%);
+    transition: all 0.3s ease;
+  }
+  
+  /* Tables - data grid style */
+  table {
+    border: 1px solid oklch(0.25 0.08 220 / 60%);
+    border-radius: 4px;
+    background: oklch(0.1 0.04 235 / 50%);
+    backdrop-filter: blur(4px);
+  }
+  
+  th {
+    background: oklch(0.15 0.06 230);
+    border-bottom: 2px solid oklch(0.6 0.25 180 / 40%);
+    color: oklch(0.85 0.06 190);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 3px oklch(0.6 0.25 180 / 30%);
+  }
+  
+  td {
+    border-bottom: 1px solid oklch(0.25 0.08 220 / 30%);
+    font-family: var(--font-mono);
+  }
+  
+  tr:hover {
+    background: oklch(0.15 0.06 230 / 50%);
+    box-shadow: 0 0 5px oklch(0.6 0.25 180 / 20%);
+  }
+  
+  /* Badges - status indicator style */
+  [data-slot="badge"] {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    font-size: 0.75rem;
+    border: 1px solid oklch(0.25 0.08 220 / 60%);
+    text-shadow: 0 0 3px currentColor;
+  }
+  
+  /* Dialogs - terminal window style */
+  [role="dialog"] {
+    background: oklch(0.08 0.03 240);
+    border: 2px solid oklch(0.6 0.25 180 / 60%);
+    border-radius: 4px;
+    box-shadow: 
+      0 0 30px oklch(0.6 0.25 180 / 30%),
+      inset 0 1px 0 oklch(0.6 0.25 180 / 20%);
+    backdrop-filter: blur(8px);
+  }
+  
+  /* Scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: oklch(0.12 0.05 235);
+    border-radius: 2px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.6 0.25 180 / 60%);
+    border-radius: 2px;
+    border: 1px solid oklch(0.25 0.08 220);
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.6 0.25 180 / 80%);
+    box-shadow: 0 0 5px oklch(0.6 0.25 180 / 50%);
+  }
+  
+  /* Selection */
+  ::selection {
+    background: oklch(0.6 0.25 180 / 40%);
+    color: oklch(0.95 0.02 240);
+    text-shadow: 0 0 3px oklch(0.6 0.25 180);
+  }
+  
+  /* Focus outline for accessibility */
+  :focus-visible {
+    outline: 2px solid oklch(0.65 0.2 185);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px oklch(0.65 0.2 185 / 20%);
+  }
+}

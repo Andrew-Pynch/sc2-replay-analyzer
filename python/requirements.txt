@@ -1,0 +1,2 @@
+sc2reader==1.8.0
+zephyrus-sc2-parser==2.0.6
