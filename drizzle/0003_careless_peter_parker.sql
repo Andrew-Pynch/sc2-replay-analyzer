@@ -1,0 +1,1 @@
+ALTER TABLE `sc2-replay-analyzer_build_order` ADD `unitType` text(255);

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { getReplayFiles } from "./actions";
+import { getReplayFiles, getAnalyzedReplays } from "./actions";
 import { Button } from "~/components/ui/button";
 import {
   Select,
@@ -13,7 +13,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { Loader2, Play, FileText } from "lucide-react";
+import { Loader2, Play, FileText, Eye, Clock, Map } from "lucide-react";
+import Link from "next/link";
 
 function generateReplaySlug(filename: string): string {
   // Extract player names and create a readable slug
@@ -41,6 +42,11 @@ export default function ReplaysPage() {
     queryFn: getReplayFiles,
   });
 
+  const analyzedReplaysQuery = useQuery({
+    queryKey: ["analyzedReplays"],
+    queryFn: getAnalyzedReplays,
+  });
+
   const handleAnalyze = () => {
     if (!selectedReplay) return;
     
@@ -48,31 +54,38 @@ export default function ReplaysPage() {
     router.push(`/replays/${slug}?filename=${encodeURIComponent(selectedReplay)}&new=true`);
   };
 
-  if (replayFilesQuery.isLoading) {
+  if (replayFilesQuery.isLoading || analyzedReplaysQuery.isLoading) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="ml-2">Loading replay files...</span>
+          <span className="ml-2">Loading...</span>
         </div>
       </div>
     );
   }
 
-  if (replayFilesQuery.isError) {
+  if (replayFilesQuery.isError || analyzedReplaysQuery.isError) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center text-red-600">
-          Failed to load replay files: {replayFilesQuery.error?.message}
+          Failed to load data: {replayFilesQuery.error?.message || analyzedReplaysQuery.error?.message}
         </div>
       </div>
     );
   }
 
   const replayFiles = replayFilesQuery.data ?? [];
+  const analyzedReplays = analyzedReplaysQuery.data ?? [];
+
+  function formatDuration(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6 space-y-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">SC2 Replay Analyzer</h1>
         <p className="text-gray-600">
@@ -80,13 +93,14 @@ export default function ReplaysPage() {
         </p>
         <p className="text-sm text-gray-500 mt-2 flex items-center gap-2">
           <FileText className="h-4 w-4" />
-          Found {replayFiles.length} replay files
+          Found {replayFiles.length} replay files • {analyzedReplays.length} analyzed
         </p>
       </div>
 
+      {/* Upload/Analyze Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Select Replay File</CardTitle>
+          <CardTitle>Analyze New Replay</CardTitle>
           <CardDescription>
             Choose a StarCraft II replay file to analyze
           </CardDescription>
@@ -118,6 +132,53 @@ export default function ReplaysPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Analyzed Replays Section */}
+      {analyzedReplays.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Previously Analyzed Replays</CardTitle>
+            <CardDescription>
+              View and re-analyze your previously processed replays
+            </CardDescription>
+          </CardHeader>
+          <CardContent 
+          >
+            <div className="space-y-3">
+              {analyzedReplays.map((replay) => (
+                <div
+                  key={replay.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div className="flex-1">
+                    <h4 className="font-medium">{replay.filename}</h4>
+                    <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                      {replay.mapName && (
+                        <div className="flex items-center gap-1">
+                          <Map className="h-4 w-4" />
+                          <span>{replay.mapName}</span>
+                        </div>
+                      )}
+                      {replay.duration && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          <span>{formatDuration(replay.duration)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Link href={`/replays/${replay.slug}`}>
+                    <Button variant="outline" size="sm">
+                      <Eye className="mr-2 h-4 w-4" />
+                      View Results
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

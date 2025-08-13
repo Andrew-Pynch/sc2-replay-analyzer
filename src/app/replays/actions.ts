@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "~/server/db";
-import { replays, players, replayPlayers, buildOrders } from "~/server/db/schema";
+import { replays, players, replayPlayers, buildOrders, replaySnapshots } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { spawn } from "child_process";
 import path from "path";
@@ -25,9 +25,35 @@ export interface PlayerStats {
 
 export interface BuildOrderAction {
   action_name: string;
+  unit_type?: string; // Optional for backward compatibility
   timestamp: number;
   order_index: number;
   formatted_time: string;
+}
+
+export interface TimeSeriesSnapshot {
+  timestamp: number; // Now supports decimal timestamps (0.1 second precision)
+  players: Record<string, {
+    name: string;
+    race: string;
+    team: number;
+    units: Array<{
+      type: string;
+      x: number;
+      y: number;
+      unit_id?: number;
+      vx?: number; // Velocity in x direction (units per second)
+      vy?: number; // Velocity in y direction (units per second)
+    }>;
+    buildings: Array<{
+      type: string;
+      x: number;
+      y: number;
+      unit_id?: number;
+      vx?: number; // Velocity in x direction (usually 0 for buildings)
+      vy?: number; // Velocity in y direction (usually 0 for buildings)
+    }>;
+  }>;
 }
 
 export interface ReplayAnalysisResult {
@@ -43,6 +69,7 @@ export interface ReplayAnalysisResult {
     player: PlayerStats;
     build_order: BuildOrderAction[];
   }>;
+  time_series?: TimeSeriesSnapshot[];
   error?: string;
 }
 
@@ -128,7 +155,7 @@ function analyzeReplayWithPython(replayPath: string): Promise<ReplayAnalysisResu
  * Store replay analysis results in the database
  */
 async function storeReplayInDatabase(analysis: ReplayAnalysisResult, slug: string) {
-  const { game_info, players: playersData } = analysis;
+  const { game_info, players: playersData, time_series } = analysis;
   
   // Insert replay record
   const [replayRecord] = await db
@@ -194,20 +221,82 @@ async function storeReplayInDatabase(analysis: ReplayAnalysisResult, slug: strin
       throw new Error(`Failed to insert replay-player record for ${player.name}`);
     }
 
-    // Insert build order actions
+    // Insert build order actions (batch insert to avoid SQLite variable limit)
     if (build_order && build_order.length > 0) {
       const buildOrderData = build_order.map((action) => ({
         replayPlayerId: replayPlayerRecord.id,
         actionName: action.action_name,
+        unitType: action.unit_type ?? null, // Store unit_type if available
         timestamp: action.timestamp,
         orderIndex: action.order_index,
       }));
       
-      await db.insert(buildOrders).values(buildOrderData);
+      // SQLite has a limit of 999 variables per statement
+      // With 5 columns per record, we can safely insert 199 records per batch (995 variables)
+      const batchSize = 199;
+      
+      for (let i = 0; i < buildOrderData.length; i += batchSize) {
+        const batch = buildOrderData.slice(i, i + batchSize);
+        await db.insert(buildOrders).values(batch);
+      }
+    }
+  }
+  
+  // Store time series data if available (batch insert to avoid SQLite variable limit)
+  if (time_series && time_series.length > 0) {
+    const snapshotData = time_series.map(snapshot => ({
+      replayId: replayRecord.id,
+      timestamp: snapshot.timestamp,
+      snapshotData: JSON.stringify(snapshot.players),
+    }));
+    
+    // SQLite has a limit of 999 variables per statement
+    // With 3 columns per record, we can safely insert 300 records per batch (900 variables)
+    const batchSize = 300;
+    
+    for (let i = 0; i < snapshotData.length; i += batchSize) {
+      const batch = snapshotData.slice(i, i + batchSize);
+      await db.insert(replaySnapshots).values(batch);
     }
   }
   
   return replayRecord.id;
+}
+
+/**
+ * Get all analyzed replays with basic info
+ */
+export async function getAnalyzedReplays(): Promise<Array<{
+  id: number;
+  slug: string;
+  filename: string;
+  mapName: string | null;
+  duration: number | null;
+  playedAt: Date | null;
+  processedAt: Date;
+}>> {
+  const analyzedReplays = await db
+    .select({
+      id: replays.id,
+      slug: replays.slug,
+      filename: replays.filename,
+      mapName: replays.mapName,
+      duration: replays.duration,
+      playedAt: replays.playedAt,
+      processedAt: replays.processedAt,
+    })
+    .from(replays)
+    .orderBy(replays.processedAt);
+  
+  return analyzedReplays.filter(replay => replay.slug !== null) as Array<{
+    id: number;
+    slug: string;
+    filename: string;
+    mapName: string | null;
+    duration: number | null;
+    playedAt: Date | null;
+    processedAt: Date;
+  }>;
 }
 
 /**
@@ -269,6 +358,7 @@ export async function getReplayBySlug(slug: string): Promise<ReplayAnalysisResul
       
       playersMap.get(playerId)!.build_order.push({
         action_name: row.buildOrders.actionName,
+        unit_type: row.buildOrders.unitType ?? undefined, // Include unit_type if available
         timestamp: row.buildOrders.timestamp,
         order_index: row.buildOrders.orderIndex,
         formatted_time: `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
@@ -295,19 +385,98 @@ export async function getReplayBySlug(slug: string): Promise<ReplayAnalysisResul
 }
 
 /**
- * Analyze a replay file and store it with a specific slug
+ * Get time series data for a replay by slug
  */
-export async function analyzeReplay(filename: string, slug: string): Promise<void> {
-  // Check if replay already exists with this slug
+export async function getReplayTimeSeriesBySlug(slug: string): Promise<TimeSeriesSnapshot[]> {
   const existingReplay = await db
     .select()
     .from(replays)
     .where(eq(replays.slug, slug))
     .limit(1);
   
-  if (existingReplay.length > 0) {
-    throw new Error("Replay with this slug already exists");
+  if (existingReplay.length === 0) {
+    return [];
   }
+  
+  const replayId = existingReplay[0]!.id;
+  
+  // Get all snapshots for this replay
+  const snapshots = await db
+    .select({
+      timestamp: replaySnapshots.timestamp,
+      snapshotData: replaySnapshots.snapshotData,
+    })
+    .from(replaySnapshots)
+    .where(eq(replaySnapshots.replayId, replayId))
+    .orderBy(replaySnapshots.timestamp);
+  
+  return snapshots.map(snapshot => ({
+    timestamp: snapshot.timestamp,
+    players: JSON.parse(snapshot.snapshotData) as Record<string, {
+      name: string;
+      race: string;
+      team: number;
+      units: Array<{
+        type: string;
+        x: number;
+        y: number;
+        unit_id?: number;
+      }>;
+      buildings: Array<{
+        type: string;
+        x: number;
+        y: number;
+        unit_id?: number;
+      }>;
+    }>,
+  }));
+}
+
+/**
+ * Delete existing replay data by slug for re-analysis
+ */
+async function deleteExistingReplay(slug: string): Promise<void> {
+  const existingReplay = await db
+    .select()
+    .from(replays)
+    .where(eq(replays.slug, slug))
+    .limit(1);
+  
+  if (existingReplay.length === 0) {
+    return;
+  }
+  
+  const replayId = existingReplay[0]!.id;
+  
+  // Get all replayPlayer IDs for this replay
+  const replayPlayerIds = await db
+    .select({ id: replayPlayers.id })
+    .from(replayPlayers)
+    .where(eq(replayPlayers.replayId, replayId));
+  
+  // Delete build orders first (due to foreign key constraints)
+  if (replayPlayerIds.length > 0) {
+    for (const { id } of replayPlayerIds) {
+      await db.delete(buildOrders).where(eq(buildOrders.replayPlayerId, id));
+    }
+  }
+  
+  // Delete replay players
+  await db.delete(replayPlayers).where(eq(replayPlayers.replayId, replayId));
+  
+  // Delete replay snapshots
+  await db.delete(replaySnapshots).where(eq(replaySnapshots.replayId, replayId));
+  
+  // Delete the replay itself
+  await db.delete(replays).where(eq(replays.id, replayId));
+}
+
+/**
+ * Analyze a replay file and store it with a specific slug
+ */
+export async function analyzeReplay(filename: string, slug: string): Promise<void> {
+  // Delete existing replay data if it exists (for re-analysis)
+  await deleteExistingReplay(slug);
   
   // Analyze fresh replay
   const replayPath = path.join(process.cwd(), "replays", filename);

@@ -28,38 +28,237 @@ def format_timestamp(seconds: int) -> str:
     return f"{minutes:02d}:{seconds:02d}"
 
 
-def extract_build_order(player, max_actions: int = 15) -> List[Dict[str, Any]]:
+def extract_time_series(replay) -> List[Dict[str, Any]]:
+    """Extract time series data showing units and buildings positions at 0.1-second intervals"""
+    time_series = []
+    
+    if not hasattr(replay, 'tracker_events'):
+        return time_series
+        
+    # Get game duration in seconds with higher precision
+    duration = replay.game_length.total_seconds() if hasattr(replay, 'game_length') else 0
+    
+    # Track active units by ID with position history and velocity
+    active_units = {}  # unit_id -> {type, x, y, control_pid, is_building, last_update, vx, vy}
+    
+    # Initialize snapshots for each 0.1 second (10 FPS)
+    interval = 0.1
+    current_time = 0.0
+    while current_time <= duration:
+        snapshot = {
+            "timestamp": round(current_time, 1),
+            "players": {}
+        }
+        
+        # Initialize player data using control_pid
+        for player in replay.players:
+            if hasattr(player, 'result') and player.result != 'Unknown':
+                snapshot["players"][str(player.pid)] = {
+                    "name": player.name,
+                    "race": player.pick_race if hasattr(player, 'pick_race') else player.play_race,
+                    "team": player.team_id if hasattr(player, 'team_id') else 0,
+                    "units": [],
+                    "buildings": []
+                }
+        
+        time_series.append(snapshot)
+        current_time += interval
+    
+    # Track units created/destroyed at each timestamp using decimal precision
+    unit_changes_by_time = {}  # snapshot_index -> {created: [], destroyed: []}
+    
+    # Process tracker events to build unit lifecycle data
+    for event in replay.tracker_events:
+        if not hasattr(event, 'second'):
+            continue
+            
+        event_time = float(event.second)
+        if event_time < 0 or event_time > duration:
+            continue
+            
+        # Find closest snapshot index
+        snapshot_index = int(event_time / interval)
+        if snapshot_index >= len(time_series):
+            continue
+            
+        if snapshot_index not in unit_changes_by_time:
+            unit_changes_by_time[snapshot_index] = {"created": [], "destroyed": []}
+        
+        # Handle unit creation events
+        if event.name in ['UnitBornEvent', 'UnitInitEvent'] and hasattr(event, 'unit'):
+            if hasattr(event, 'control_pid') and event.control_pid in [1, 2]:
+                unit_name = event.unit.name if hasattr(event.unit, 'name') else "Unknown"
+                if is_game_unit(unit_name):
+                    unit_id = event.unit_id if hasattr(event, 'unit_id') else None
+                    if unit_id:
+                        # Store unit data in active_units
+                        active_units[unit_id] = {
+                            "type": unit_name,
+                            "x": event.x if hasattr(event, 'x') else 0,
+                            "y": event.y if hasattr(event, 'y') else 0,
+                            "control_pid": event.control_pid,
+                            "is_building": is_building(unit_name),
+                            "last_update": event_time,
+                            "vx": 0.0,
+                            "vy": 0.0
+                        }
+                        unit_changes_by_time[snapshot_index]["created"].append(unit_id)
+        
+        # Handle unit death events
+        elif event.name == 'UnitDiedEvent' and hasattr(event, 'unit_id'):
+            unit_id = event.unit_id
+            if unit_id in active_units:
+                unit_changes_by_time[snapshot_index]["destroyed"].append(unit_id)
+        
+        # Handle position update events with velocity calculation
+        elif event.name == 'UnitPositionsEvent' and hasattr(event, 'units'):
+            for unit_obj, (x, y) in event.units.items():
+                # Extract unit ID from unit object
+                unit_id = None
+                if hasattr(unit_obj, 'id'):
+                    unit_id = unit_obj.id
+                elif hasattr(unit_obj, 'unit_id'):
+                    unit_id = unit_obj.unit_id
+                
+                if unit_id and unit_id in active_units:
+                    unit_info = active_units[unit_id]
+                    old_x, old_y = unit_info["x"], unit_info["y"]
+                    time_delta = event_time - unit_info["last_update"]
+                    
+                    # Calculate velocity if enough time has passed
+                    if time_delta > 0.01:  # Avoid division by very small numbers
+                        unit_info["vx"] = (x - old_x) / time_delta
+                        unit_info["vy"] = (y - old_y) / time_delta
+                    
+                    unit_info["x"] = x
+                    unit_info["y"] = y
+                    unit_info["last_update"] = event_time
+    
+    # Build snapshots progressively
+    current_active_units = {}
+    
+    for snapshot_idx, snapshot in enumerate(time_series):
+        # Apply changes for this timestamp
+        if snapshot_idx in unit_changes_by_time:
+            changes = unit_changes_by_time[snapshot_idx]
+            
+            # Add newly created units
+            for unit_id in changes["created"]:
+                if unit_id in active_units:
+                    current_active_units[unit_id] = active_units[unit_id].copy()
+            
+            # Remove destroyed units
+            for unit_id in changes["destroyed"]:
+                if unit_id in current_active_units:
+                    del current_active_units[unit_id]
+        
+        # Populate snapshot with current active units
+        for unit_id, unit_info in current_active_units.items():
+            player_id = str(unit_info["control_pid"])
+            if player_id in snapshot["players"]:
+                unit_data = {
+                    "type": unit_info["type"],
+                    "x": unit_info["x"],
+                    "y": unit_info["y"],
+                    "unit_id": unit_id,
+                    "vx": unit_info.get("vx", 0.0),
+                    "vy": unit_info.get("vy", 0.0)
+                }
+                
+                if unit_info["is_building"]:
+                    snapshot["players"][player_id]["buildings"].append(unit_data)
+                else:
+                    snapshot["players"][player_id]["units"].append(unit_data)
+    
+    return time_series
+
+
+def is_game_unit(unit_type: str) -> bool:
+    """Determine if a unit type is a real game unit (not UI elements or map features)"""
+    excluded_prefixes = [
+        'Beacon', 'Mineral', 'Vespene', 'XelNaga', 'Destructible', 
+        'Acceleration', 'Collapsible', 'Purifier', 'Rock'
+    ]
+    
+    return not any(unit_type.startswith(prefix) for prefix in excluded_prefixes)
+
+
+def is_building(unit_type: str) -> bool:
+    """Determine if a unit type is a building"""
+    buildings = {
+        # Terran buildings
+        "CommandCenter", "OrbitalCommand", "PlanetaryFortress", "SupplyDepot", 
+        "Barracks", "Factory", "Starport", "EngineeringBay", "Armory", "Refinery", 
+        "Bunker", "MissileTurret", "SensorTower", "TechLab", "Reactor", "Academy", 
+        "FusionCore", "GhostAcademy",
+        
+        # Protoss buildings
+        "Nexus", "Pylon", "Gateway", "Warpgate", "Assimilator", "Forge", 
+        "PhotonCannon", "CyberneticsCore", "Stargate", "Robotics", "RoboticsBay", 
+        "FleetBeacon", "TemplarArchives", "DarkShrine", "TwilightCouncil", "ShieldBattery",
+        
+        # Zerg buildings
+        "Hatchery", "Lair", "Hive", "Extractor", "SpawningPool", "EvolutionChamber", 
+        "RoachWarren", "BanelingNest", "CreepTumor", "SpineCrawler", "SporeCrawler", 
+        "HydraliskDen", "LurkerDen", "LurkerDenMP", "Infestation", "InfestationPit", 
+        "Spire", "GreaterSpire", "NydusNetwork", "NydusCanal", "UltraliskCavern"
+    }
+    return unit_type in buildings
+
+
+def extract_build_order(player, max_actions: int = None) -> List[Dict[str, Any]]:
     """Extract build order from player events"""
     build_actions = []
     action_count = 0
     
     # Get relevant events from the player
     for event in player.events:
-        if action_count >= max_actions:
+        if max_actions and action_count >= max_actions:
             break
             
         action_name = None
+        unit_type = None
         timestamp = event.second if hasattr(event, 'second') else 0
         
         # Check different event types and extract meaningful build actions
         if hasattr(event, 'unit') and hasattr(event.unit, 'name'):
             if event.name in ['UnitBornEvent', 'UnitInitEvent']:
                 action_name = f"Build {event.unit.name}"
+                unit_type = event.unit.name
+            elif event.name == 'UnitDoneEvent':
+                action_name = f"Complete {event.unit.name}"
+                unit_type = event.unit.name
             elif event.name == 'UnitDiedEvent' and hasattr(event, 'killer'):
                 # Skip death events for build order
                 continue
                 
         elif hasattr(event, 'ability') and hasattr(event.ability, 'name'):
-            if 'Train' in event.ability.name or 'Build' in event.ability.name:
-                action_name = event.ability.name.replace('Train', 'Train ').replace('Build', 'Build ')
+            ability_name = event.ability.name
+            if 'Train' in ability_name:
+                # Extract unit name from ability (e.g., "TrainMarine" -> "Marine")
+                unit_name = ability_name.replace('Train', '')
+                action_name = f"Train {unit_name}"
+                unit_type = unit_name
+            elif 'Build' in ability_name:
+                # Extract building name from ability (e.g., "BuildSupplyDepot" -> "SupplyDepot")
+                building_name = ability_name.replace('Build', '')
+                action_name = f"Build {building_name}"
+                unit_type = building_name
+            elif 'Research' in ability_name:
+                # Extract research name from ability
+                research_name = ability_name.replace('Research', '')
+                action_name = f"Research {research_name}"
+                unit_type = research_name
                 
         elif hasattr(event, 'upgrade') and hasattr(event.upgrade, 'name'):
             if event.name == 'UpgradeCompleteEvent':
                 action_name = f"Upgrade {event.upgrade.name}"
+                unit_type = event.upgrade.name
         
         if action_name and timestamp > 0:
             build_actions.append({
                 "action_name": action_name,
+                "unit_type": unit_type,
                 "timestamp": timestamp,
                 "order_index": action_count + 1,
                 "formatted_time": format_timestamp(timestamp)
@@ -147,6 +346,9 @@ def analyze_replay(replay_path: str) -> Dict[str, Any]:
                     # Skip events that don't match our pattern
                     pass
         
+        # Extract time series data for replay visualization
+        time_series = extract_time_series(replay)
+        
         # Extract player information
         players_data = []
         game_minutes = game_info["duration"] / 60 if game_info["duration"] > 0 else 1
@@ -194,7 +396,8 @@ def analyze_replay(replay_path: str) -> Dict[str, Any]:
         return {
             "success": True,
             "game_info": game_info,
-            "players": players_data
+            "players": players_data,
+            "time_series": time_series
         }
         
     except Exception as e:

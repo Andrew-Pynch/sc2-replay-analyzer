@@ -190,6 +190,7 @@ export const buildOrders = createTable(
       .notNull()
       .references(() => replayPlayers.id),
     actionName: d.text({ length: 255 }).notNull(),
+    unitType: d.text({ length: 255 }), // Optional unit type for icon mapping
     timestamp: d.integer().notNull(), // Time in seconds from game start
     orderIndex: d.integer().notNull(), // Sequential order of the action
     createdAt: d
@@ -204,9 +205,31 @@ export const buildOrders = createTable(
   ],
 );
 
+export const replaySnapshots = createTable(
+  "replay_snapshot",
+  (d) => ({
+    id: d.integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
+    replayId: d
+      .integer()
+      .notNull()
+      .references(() => replays.id),
+    timestamp: d.integer().notNull(), // Time in seconds from game start
+    snapshotData: d.text().notNull(), // JSON string containing units/buildings positions
+    createdAt: d
+      .integer({ mode: "timestamp" })
+      .default(sql`(unixepoch())`)
+      .notNull(),
+  }),
+  (t) => [
+    index("replay_snapshot_replay_idx").on(t.replayId),
+    index("replay_snapshot_timestamp_idx").on(t.timestamp),
+  ],
+);
+
 // Relations
 export const replaysRelations = relations(replays, ({ many }) => ({
   replayPlayers: many(replayPlayers),
+  snapshots: many(replaySnapshots),
 }));
 
 export const playersRelations = relations(players, ({ many }) => ({
@@ -229,5 +252,12 @@ export const buildOrdersRelations = relations(buildOrders, ({ one }) => ({
   replayPlayer: one(replayPlayers, {
     fields: [buildOrders.replayPlayerId],
     references: [replayPlayers.id],
+  }),
+}));
+
+export const replaySnapshotsRelations = relations(replaySnapshots, ({ one }) => ({
+  replay: one(replays, {
+    fields: [replaySnapshots.replayId],
+    references: [replays.id],
   }),
 }));

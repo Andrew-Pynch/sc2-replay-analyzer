@@ -4,6 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Badge } from "~/components/ui/badge";
 import { Clock, Map, Users, Award, Zap, DollarSign, Target, Shield } from "lucide-react";
 import AnalyzeButton from "./components/AnalyzeButton";
+import UnitIcon from "./components/UnitIcon";
+import ReplayViewer from "./components/ReplayViewer";
+import ReplayViewerWrapper from "./components/ReplayViewerWrapper";
+import { getReplayTimeSeriesBySlug } from "../actions";
 
 interface ReplayPageProps {
   params: Promise<{ replaySlug: string }>;
@@ -60,7 +64,10 @@ export default async function ReplayPage({ params, searchParams }: ReplayPagePro
   }
 
   // Try to load existing replay data
-  const replayData = await getReplayBySlug(replaySlug);
+  const [replayData, timeSeriesData] = await Promise.all([
+    getReplayBySlug(replaySlug),
+    getReplayTimeSeriesBySlug(replaySlug)
+  ]);
   
   if (!replayData) {
     notFound();
@@ -165,20 +172,57 @@ export default async function ReplayPage({ params, searchParams }: ReplayPagePro
 
                 {/* Build Order */}
                 <div>
-                  <h4 className="font-semibold text-sm mb-2">Build Order</h4>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                  <h4 className="font-semibold text-sm mb-2">
+                    Build Order ({playerData.build_order.length} actions)
+                  </h4>
+                  <div className="space-y-1 max-h-96 overflow-y-auto border rounded-lg p-2">
                     {playerData.build_order.map((action, actionIndex) => (
-                      <div key={actionIndex} className="flex items-center gap-2 text-xs">
-                        <span className="text-gray-500 w-12">{action.formatted_time}</span>
-                        <span className="text-gray-700 dark:text-gray-300">{action.action_name}</span>
+                      <div key={actionIndex} className="flex items-center gap-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 p-1 rounded">
+                        <span className="text-gray-500 w-12 font-mono">{action.formatted_time}</span>
+                        {action.unit_type ? (
+                          <UnitIcon unitType={action.unit_type} actionName={action.action_name} />
+                        ) : (
+                          <div className="w-6 h-6 relative flex-shrink-0 bg-gray-200 rounded-sm flex items-center justify-center border">
+                            <span className="text-xs text-gray-400">?</span>
+                          </div>
+                        )}
+                        <span className="text-gray-700 dark:text-gray-300 flex-grow">{action.action_name}</span>
                       </div>
                     ))}
+                    {playerData.build_order.length === 0 && (
+                      <div className="text-center text-gray-500 py-4">
+                        No build order data available
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+
+        {/* High-Performance Replay Viewer */}
+        <ReplayViewerWrapper 
+          timeSeriesData={timeSeriesData} 
+          gameDuration={replayData.game_info.duration}
+        />
+
+        {/* Re-analyze Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Re-analyze Replay</CardTitle>
+            <CardDescription>
+              Run the analysis again with the latest improvements
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AnalyzeButton 
+              filename={replayData.game_info.filename} 
+              slug={replaySlug} 
+              isReAnalysis={true}
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -22,6 +22,20 @@
       "when": 1755042680058,
       "tag": "0002_boring_sunspot",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1755104205405,
+      "tag": "0003_careless_peter_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1755106023296,
+      "tag": "0004_friendly_galactus",
+      "breakpoints": true
     }
   ]
 }

@@ -11,9 +11,10 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 interface AnalyzeButtonProps {
   filename: string;
   slug: string;
+  isReAnalysis?: boolean;
 }
 
-export default function AnalyzeButton({ filename, slug }: AnalyzeButtonProps) {
+export default function AnalyzeButton({ filename, slug, isReAnalysis = false }: AnalyzeButtonProps) {
   const router = useRouter();
   
   const analyzeReplayMutation = useMutation({
@@ -29,9 +30,14 @@ export default function AnalyzeButton({ filename, slug }: AnalyzeButtonProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold">Ready to analyze replay</h3>
+          <h3 className="font-semibold">
+            {isReAnalysis ? "Re-analyze with latest stats" : "Ready to analyze replay"}
+          </h3>
           <p className="text-sm text-gray-600">
-            This will extract player statistics, build orders, and game insights
+            {isReAnalysis 
+              ? "Run the analysis again with the latest improvements to get updated insights"
+              : "This will extract player statistics, build orders, and game insights"
+            }
           </p>
         </div>
         <Button
@@ -52,7 +58,7 @@ export default function AnalyzeButton({ filename, slug }: AnalyzeButtonProps) {
           ) : (
             <>
               <Play className="mr-2 h-4 w-4" />
-              Start Analysis
+              {isReAnalysis ? "Re-analyze Replay" : "Start Analysis"}
             </>
           )}
         </Button>
