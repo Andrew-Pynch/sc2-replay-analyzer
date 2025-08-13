@@ -90,7 +90,8 @@ def analyze_replay(replay_path: str) -> Dict[str, Any]:
         if file_size < 1024:  # Less than 1KB seems suspicious
             return {"error": "Replay file appears to be corrupted (too small)"}
         
-        replay = sc2reader.load_replay(replay_path)
+        # Load replay with tracker events for proper stats extraction
+        replay = sc2reader.load_replay(replay_path, load_level=4)
         
         if not replay:
             return {"error": "Failed to load replay file - possibly corrupted or unsupported format"}
@@ -104,35 +105,83 @@ def analyze_replay(replay_path: str) -> Dict[str, Any]:
             "played_at": int(replay.start_time.timestamp()) if hasattr(replay, 'start_time') else None,
         }
         
+        # Initialize player stats tracking from tracker events
+        player_stats_data = {}
+        
+        # Process tracker events for accurate resource and army stats
+        if hasattr(replay, 'tracker_events'):
+            for event in replay.tracker_events:
+                # Import the event class for type checking
+                try:
+                    if hasattr(event, 'pid') and event.name == 'PlayerStatsEvent':
+                        pid = event.pid
+                        if pid not in player_stats_data:
+                            player_stats_data[pid] = {
+                                'minerals_collected': 0,
+                                'vespene_collected': 0,
+                                'units_killed_value': 0,
+                                'army_value_max': 0
+                            }
+                        
+                        stats = player_stats_data[pid]
+                        
+                        # Track maximum values over time
+                        if hasattr(event, 'minerals_collection_rate') and hasattr(event, 'second'):
+                            total_mins = event.minerals_collection_rate * event.second / 60 if event.second > 0 else 0
+                            stats['minerals_collected'] = max(stats['minerals_collected'], total_mins)
+                        
+                        if hasattr(event, 'vespene_collection_rate') and hasattr(event, 'second'):
+                            total_vesp = event.vespene_collection_rate * event.second / 60 if event.second > 0 else 0
+                            stats['vespene_collected'] = max(stats['vespene_collected'], total_vesp)
+                        
+                        # Units killed value
+                        if hasattr(event, 'minerals_killed') and hasattr(event, 'vespene_killed'):
+                            killed_value = event.minerals_killed + event.vespene_killed
+                            stats['units_killed_value'] = max(stats['units_killed_value'], killed_value)
+                        
+                        # Army value
+                        if hasattr(event, 'minerals_used_current_army') and hasattr(event, 'vespene_used_current_army'):
+                            army_value = event.minerals_used_current_army + event.vespene_used_current_army
+                            stats['army_value_max'] = max(stats['army_value_max'], army_value)
+                except:
+                    # Skip events that don't match our pattern
+                    pass
+        
         # Extract player information
         players_data = []
+        game_minutes = game_info["duration"] / 60 if game_info["duration"] > 0 else 1
         
         for player in replay.players:
             # Skip observers
             if not hasattr(player, 'result') or player.result == 'Unknown':
                 continue
                 
-            # Get basic player stats
+            # Calculate APM from player events
+            apm = 0
+            if hasattr(player, 'events'):
+                # Count Command and Selection events as actions (standard APM calculation)
+                action_events = [e for e in player.events if any(x in type(e).__name__ for x in ['Command', 'Selection'])]
+                apm = int(len(action_events) / game_minutes) if game_minutes > 0 else 0
+                
+            # Get stats from tracker events
+            player_tracker_stats = player_stats_data.get(player.pid, {
+                'minerals_collected': 0,
+                'vespene_collected': 0,
+                'units_killed_value': 0,
+                'army_value_max': 0
+            })
+                
+            # Build player stats object
             player_stats = {
                 "name": player.name,
                 "race": player.pick_race if hasattr(player, 'pick_race') else player.play_race,
                 "team": player.team_id if hasattr(player, 'team_id') else 0,
                 "result": player.result,
-                "apm": getattr(player, 'avg_apm', 0),
-                "resources_collected": 0,
-                "units_killed": 0,
-                "army_value_max": 0
+                "apm": apm,
+                "resources_collected": int(player_tracker_stats['minerals_collected'] + player_tracker_stats['vespene_collected']),
+                "units_killed": int(player_tracker_stats['units_killed_value']),
+                "army_value_max": int(player_tracker_stats['army_value_max'])
             }
-            
-            # Try to extract more detailed stats if available
-            if hasattr(player, 'stats'):
-                stats = player.stats
-                if hasattr(stats, 'minerals_collection_rate'):
-                    player_stats["resources_collected"] = int(stats.minerals_collection_rate * game_info["duration"] / 60)
-                if hasattr(stats, 'units_killed'):
-                    player_stats["units_killed"] = stats.units_killed
-                if hasattr(stats, 'army_value'):
-                    player_stats["army_value_max"] = max(stats.army_value) if isinstance(stats.army_value, list) else stats.army_value
             
             # Extract build order
             build_order = extract_build_order(player)

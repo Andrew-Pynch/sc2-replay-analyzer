@@ -127,13 +127,14 @@ function analyzeReplayWithPython(replayPath: string): Promise<ReplayAnalysisResu
 /**
  * Store replay analysis results in the database
  */
-async function storeReplayInDatabase(analysis: ReplayAnalysisResult) {
+async function storeReplayInDatabase(analysis: ReplayAnalysisResult, slug: string) {
   const { game_info, players: playersData } = analysis;
   
   // Insert replay record
   const [replayRecord] = await db
     .insert(replays)
     .values({
+      slug,
       filename: game_info.filename,
       mapName: game_info.map_name,
       gameVersion: game_info.game_version,
@@ -210,137 +211,121 @@ async function storeReplayInDatabase(analysis: ReplayAnalysisResult) {
 }
 
 /**
- * Main function to analyze a replay file
+ * Get replay data by slug
  */
-export async function analyzeReplay(filename: string): Promise<{
-  success: boolean;
-  data?: ReplayAnalysisResult;
-  error?: string;
-  fromCache?: boolean;
-}> {
-  try {
-    // Check if replay is already processed
-    const existingReplay = await db
-      .select()
-      .from(replays)
-      .where(eq(replays.filename, filename))
-      .limit(1);
-    
-    if (existingReplay.length > 0) {
-      // Return cached result
-      const replayId = existingReplay[0]!.id;
-      
-      // Get players and build orders for this replay
-      const replayPlayersData = await db
-        .select({
-          player: players,
-          replayPlayer: replayPlayers,
-          buildOrders: buildOrders,
-        })
-        .from(replayPlayers)
-        .innerJoin(players, eq(replayPlayers.playerId, players.id))
-        .leftJoin(buildOrders, eq(buildOrders.replayPlayerId, replayPlayers.id))
-        .where(eq(replayPlayers.replayId, replayId));
-      
-      // Group build orders by player
-      const playersMap = new Map<number, {
-        player: PlayerStats;
-        build_order: BuildOrderAction[];
-      }>();
-      
-      replayPlayersData.forEach((row) => {
-        const playerId = row.replayPlayer.id;
-        
-        if (!playersMap.has(playerId)) {
-          playersMap.set(playerId, {
-            player: {
-              name: row.player.name,
-              race: row.player.race ?? "",
-              team: row.replayPlayer.team,
-              result: row.replayPlayer.result ?? "",
-              apm: row.replayPlayer.apm ?? 0,
-              resources_collected: row.replayPlayer.resourcesCollected ?? 0,
-              units_killed: row.replayPlayer.unitsKilled ?? 0,
-              army_value_max: row.replayPlayer.armyValueMax ?? 0,
-            },
-            build_order: [],
-          });
-        }
-        
-        if (row.buildOrders) {
-          const minutes = Math.floor(row.buildOrders.timestamp / 60);
-          const seconds = row.buildOrders.timestamp % 60;
-          
-          playersMap.get(playerId)!.build_order.push({
-            action_name: row.buildOrders.actionName,
-            timestamp: row.buildOrders.timestamp,
-            order_index: row.buildOrders.orderIndex,
-            formatted_time: `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
-          });
-        }
-      });
-      
-      // Sort build orders by order index
-      playersMap.forEach((playerData) => {
-        playerData.build_order.sort((a, b) => a.order_index - b.order_index);
-      });
-      
-      const cachedResult: ReplayAnalysisResult = {
-        success: true,
-        game_info: {
-          filename: existingReplay[0]!.filename,
-          map_name: existingReplay[0]!.mapName ?? "",
-          game_version: existingReplay[0]!.gameVersion ?? "",
-          duration: existingReplay[0]!.duration ?? 0,
-          played_at: existingReplay[0]!.playedAt ? Math.floor(existingReplay[0]!.playedAt.getTime() / 1000) : 0,
-        },
-        players: Array.from(playersMap.values()),
-      };
-      
-      return {
-        success: true,
-        data: cachedResult,
-        fromCache: true,
-      };
-    }
-    
-    // Analyze fresh replay
-    const replayPath = path.join(process.cwd(), "replays", filename);
-    
-    // Check if file exists
-    try {
-      await fs.access(replayPath);
-    } catch {
-      return {
-        success: false,
-        error: `Replay file not found: ${filename}`,
-      };
-    }
-    
-    // Run Python analysis
-    const analysis = await analyzeReplayWithPython(replayPath);
-    
-    if (!analysis.success) {
-      return {
-        success: false,
-        error: analysis.error || "Analysis failed",
-      };
-    }
-    
-    // Store in database
-    await storeReplayInDatabase(analysis);
-    
-    return {
-      success: true,
-      data: analysis,
-      fromCache: false,
-    };
-    
-  } catch (error) {
-    console.error("Error analyzing replay:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    };
+export async function getReplayBySlug(slug: string): Promise<ReplayAnalysisResult | null> {
+  const existingReplay = await db
+    .select()
+    .from(replays)
+    .where(eq(replays.slug, slug))
+    .limit(1);
+  
+  if (existingReplay.length === 0) {
+    return null;
   }
+  
+  const replayId = existingReplay[0]!.id;
+  
+  // Get players and build orders for this replay
+  const replayPlayersData = await db
+    .select({
+      player: players,
+      replayPlayer: replayPlayers,
+      buildOrders: buildOrders,
+    })
+    .from(replayPlayers)
+    .innerJoin(players, eq(replayPlayers.playerId, players.id))
+    .leftJoin(buildOrders, eq(buildOrders.replayPlayerId, replayPlayers.id))
+    .where(eq(replayPlayers.replayId, replayId));
+  
+  // Group build orders by player
+  const playersMap = new Map<number, {
+    player: PlayerStats;
+    build_order: BuildOrderAction[];
+  }>();
+  
+  replayPlayersData.forEach((row) => {
+    const playerId = row.replayPlayer.id;
+    
+    if (!playersMap.has(playerId)) {
+      playersMap.set(playerId, {
+        player: {
+          name: row.player.name,
+          race: row.player.race ?? "",
+          team: row.replayPlayer.team,
+          result: row.replayPlayer.result ?? "",
+          apm: row.replayPlayer.apm ?? 0,
+          resources_collected: row.replayPlayer.resourcesCollected ?? 0,
+          units_killed: row.replayPlayer.unitsKilled ?? 0,
+          army_value_max: row.replayPlayer.armyValueMax ?? 0,
+        },
+        build_order: [],
+      });
+    }
+    
+    if (row.buildOrders) {
+      const minutes = Math.floor(row.buildOrders.timestamp / 60);
+      const seconds = row.buildOrders.timestamp % 60;
+      
+      playersMap.get(playerId)!.build_order.push({
+        action_name: row.buildOrders.actionName,
+        timestamp: row.buildOrders.timestamp,
+        order_index: row.buildOrders.orderIndex,
+        formatted_time: `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
+      });
+    }
+  });
+  
+  // Sort build orders by order index
+  playersMap.forEach((playerData) => {
+    playerData.build_order.sort((a, b) => a.order_index - b.order_index);
+  });
+  
+  return {
+    success: true,
+    game_info: {
+      filename: existingReplay[0]!.filename,
+      map_name: existingReplay[0]!.mapName ?? "",
+      game_version: existingReplay[0]!.gameVersion ?? "",
+      duration: existingReplay[0]!.duration ?? 0,
+      played_at: existingReplay[0]!.playedAt ? Math.floor(existingReplay[0]!.playedAt.getTime() / 1000) : 0,
+    },
+    players: Array.from(playersMap.values()),
+  };
+}
+
+/**
+ * Analyze a replay file and store it with a specific slug
+ */
+export async function analyzeReplay(filename: string, slug: string): Promise<void> {
+  // Check if replay already exists with this slug
+  const existingReplay = await db
+    .select()
+    .from(replays)
+    .where(eq(replays.slug, slug))
+    .limit(1);
+  
+  if (existingReplay.length > 0) {
+    throw new Error("Replay with this slug already exists");
+  }
+  
+  // Analyze fresh replay
+  const replayPath = path.join(process.cwd(), "replays", filename);
+  
+  // Check if file exists
+  try {
+    await fs.access(replayPath);
+  } catch {
+    throw new Error(`Replay file not found: ${filename}`);
+  }
+  
+  // Run Python analysis
+  const analysis = await analyzeReplayWithPython(replayPath);
+  
+  if (!analysis.success) {
+    throw new Error(analysis.error || "Analysis failed");
+  }
+  
+  // Store in database with slug
+  await storeReplayInDatabase(analysis, slug);
 }

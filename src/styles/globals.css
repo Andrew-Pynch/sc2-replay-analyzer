@@ -103,7 +103,7 @@
   --secondary: oklch(0.12 0.04 225); /* Darker navy for secondary elements */
   --secondary-foreground: oklch(0.8 0.12 200);
   --muted: oklch(0.1 0.03 230);
-  --muted-foreground: oklch(0.6 0.1 200); /* Dimmed light blue */
+  --muted-foreground: oklch(0.75 0.12 200); /* Brighter dimmed light blue for better readability */
   --accent: oklch(0.8 0.2 200); /* Bright light blue for accents */
   --accent-foreground: oklch(0.03 0.01 240);
   --destructive: oklch(0.65 0.25 15); /* Orange-red for destructive actions */
@@ -156,6 +156,15 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  
+  /* Override Tailwind gray colors for better readability in dark theme */
+  .text-gray-600 {
+    color: oklch(0.75 0.08 200) !important;
+  }
+  
+  .text-gray-500 {
+    color: oklch(0.68 0.06 200) !important;
   }
   body {
     @apply bg-background text-foreground;

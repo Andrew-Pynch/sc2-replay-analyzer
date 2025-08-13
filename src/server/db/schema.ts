@@ -1,6 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import { index, primaryKey, sqliteTableCreator } from "drizzle-orm/sqlite-core";
-import { type AdapterAccount } from "next-auth/adapters";
+import { type AdapterAccount } from "@auth/core/adapters";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -111,6 +111,7 @@ export const replays = createTable(
   "replay",
   (d) => ({
     id: d.integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
+    slug: d.text({ length: 100 }).unique(),
     filename: d.text({ length: 255 }).notNull().unique(),
     mapName: d.text({ length: 255 }),
     gameVersion: d.text({ length: 50 }),
@@ -126,6 +127,7 @@ export const replays = createTable(
       .notNull(),
   }),
   (t) => [
+    index("replay_slug_idx").on(t.slug),
     index("replay_filename_idx").on(t.filename),
     index("replay_map_idx").on(t.mapName),
     index("replay_processed_idx").on(t.processedAt),
