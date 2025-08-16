@@ -999,7 +999,7 @@ const AdminComponentsPage = () => {
             max={100}
             step={1}
             className="w-[60%]"
-            onValueChange={val => setPosition(val[0] as any)}
+            onValueChange={(val) => setPosition(val[0] as any)}
           />
           <div className="mt-2">Value: {position}</div>
         </section>

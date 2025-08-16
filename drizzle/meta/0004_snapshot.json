@@ -88,9 +88,7 @@
       "indexes": {
         "account_user_id_idx": {
           "name": "account_user_id_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         }
       },
@@ -99,22 +97,15 @@
           "name": "sc2-replay-analyzer_account_userId_sc2-replay-analyzer_user_id_fk",
           "tableFrom": "sc2-replay-analyzer_account",
           "tableTo": "sc2-replay-analyzer_user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "sc2-replay-analyzer_account_provider_providerAccountId_pk": {
-          "columns": [
-            "provider",
-            "providerAccountId"
-          ],
+          "columns": ["provider", "providerAccountId"],
           "name": "sc2-replay-analyzer_account_provider_providerAccountId_pk"
         }
       },
@@ -178,23 +169,17 @@
       "indexes": {
         "build_order_replay_player_idx": {
           "name": "build_order_replay_player_idx",
-          "columns": [
-            "replayPlayerId"
-          ],
+          "columns": ["replayPlayerId"],
           "isUnique": false
         },
         "build_order_timestamp_idx": {
           "name": "build_order_timestamp_idx",
-          "columns": [
-            "timestamp"
-          ],
+          "columns": ["timestamp"],
           "isUnique": false
         },
         "build_order_order_idx": {
           "name": "build_order_order_idx",
-          "columns": [
-            "orderIndex"
-          ],
+          "columns": ["orderIndex"],
           "isUnique": false
         }
       },
@@ -203,12 +188,8 @@
           "name": "sc2-replay-analyzer_build_order_replayPlayerId_sc2-replay-analyzer_replay_player_id_fk",
           "tableFrom": "sc2-replay-analyzer_build_order",
           "tableTo": "sc2-replay-analyzer_replay_player",
-          "columnsFrom": [
-            "replayPlayerId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["replayPlayerId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -253,16 +234,12 @@
       "indexes": {
         "player_name_idx": {
           "name": "player_name_idx",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": false
         },
         "player_race_idx": {
           "name": "player_race_idx",
-          "columns": [
-            "race"
-          ],
+          "columns": ["race"],
           "isUnique": false
         }
       },
@@ -314,16 +291,12 @@
       "indexes": {
         "created_by_idx": {
           "name": "created_by_idx",
-          "columns": [
-            "createdById"
-          ],
+          "columns": ["createdById"],
           "isUnique": false
         },
         "name_idx": {
           "name": "name_idx",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": false
         }
       },
@@ -332,12 +305,8 @@
           "name": "sc2-replay-analyzer_post_createdById_sc2-replay-analyzer_user_id_fk",
           "tableFrom": "sc2-replay-analyzer_post",
           "tableTo": "sc2-replay-analyzer_user",
-          "columnsFrom": [
-            "createdById"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["createdById"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -424,23 +393,17 @@
       "indexes": {
         "replay_player_replay_idx": {
           "name": "replay_player_replay_idx",
-          "columns": [
-            "replayId"
-          ],
+          "columns": ["replayId"],
           "isUnique": false
         },
         "replay_player_player_idx": {
           "name": "replay_player_player_idx",
-          "columns": [
-            "playerId"
-          ],
+          "columns": ["playerId"],
           "isUnique": false
         },
         "replay_player_team_idx": {
           "name": "replay_player_team_idx",
-          "columns": [
-            "team"
-          ],
+          "columns": ["team"],
           "isUnique": false
         }
       },
@@ -449,12 +412,8 @@
           "name": "sc2-replay-analyzer_replay_player_replayId_sc2-replay-analyzer_replay_id_fk",
           "tableFrom": "sc2-replay-analyzer_replay_player",
           "tableTo": "sc2-replay-analyzer_replay",
-          "columnsFrom": [
-            "replayId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["replayId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -462,12 +421,8 @@
           "name": "sc2-replay-analyzer_replay_player_playerId_sc2-replay-analyzer_player_id_fk",
           "tableFrom": "sc2-replay-analyzer_replay_player",
           "tableTo": "sc2-replay-analyzer_player",
-          "columnsFrom": [
-            "playerId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["playerId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -519,16 +474,12 @@
       "indexes": {
         "replay_snapshot_replay_idx": {
           "name": "replay_snapshot_replay_idx",
-          "columns": [
-            "replayId"
-          ],
+          "columns": ["replayId"],
           "isUnique": false
         },
         "replay_snapshot_timestamp_idx": {
           "name": "replay_snapshot_timestamp_idx",
-          "columns": [
-            "timestamp"
-          ],
+          "columns": ["timestamp"],
           "isUnique": false
         }
       },
@@ -537,12 +488,8 @@
           "name": "sc2-replay-analyzer_replay_snapshot_replayId_sc2-replay-analyzer_replay_id_fk",
           "tableFrom": "sc2-replay-analyzer_replay_snapshot",
           "tableTo": "sc2-replay-analyzer_replay",
-          "columnsFrom": [
-            "replayId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["replayId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -623,44 +570,32 @@
       "indexes": {
         "sc2-replay-analyzer_replay_slug_unique": {
           "name": "sc2-replay-analyzer_replay_slug_unique",
-          "columns": [
-            "slug"
-          ],
+          "columns": ["slug"],
           "isUnique": true
         },
         "sc2-replay-analyzer_replay_filename_unique": {
           "name": "sc2-replay-analyzer_replay_filename_unique",
-          "columns": [
-            "filename"
-          ],
+          "columns": ["filename"],
           "isUnique": true
         },
         "replay_slug_idx": {
           "name": "replay_slug_idx",
-          "columns": [
-            "slug"
-          ],
+          "columns": ["slug"],
           "isUnique": false
         },
         "replay_filename_idx": {
           "name": "replay_filename_idx",
-          "columns": [
-            "filename"
-          ],
+          "columns": ["filename"],
           "isUnique": false
         },
         "replay_map_idx": {
           "name": "replay_map_idx",
-          "columns": [
-            "mapName"
-          ],
+          "columns": ["mapName"],
           "isUnique": false
         },
         "replay_processed_idx": {
           "name": "replay_processed_idx",
-          "columns": [
-            "processedAt"
-          ],
+          "columns": ["processedAt"],
           "isUnique": false
         }
       },
@@ -697,9 +632,7 @@
       "indexes": {
         "session_userId_idx": {
           "name": "session_userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         }
       },
@@ -708,12 +641,8 @@
           "name": "sc2-replay-analyzer_session_userId_sc2-replay-analyzer_user_id_fk",
           "tableFrom": "sc2-replay-analyzer_session",
           "tableTo": "sc2-replay-analyzer_user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -797,10 +726,7 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {
         "sc2-replay-analyzer_verification_token_identifier_token_pk": {
-          "columns": [
-            "identifier",
-            "token"
-          ],
+          "columns": ["identifier", "token"],
           "name": "sc2-replay-analyzer_verification_token_identifier_token_pk"
         }
       },

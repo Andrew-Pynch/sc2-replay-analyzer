@@ -7,10 +7,10 @@ import { type TimeSeriesSnapshot } from "../actions";
 const PixiReplayViewer = dynamic(() => import("./PixiReplayViewer"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-96 border rounded-lg bg-gray-900 flex items-center justify-center">
+    <div className="flex h-96 w-full items-center justify-center rounded-lg border bg-gray-900">
       <div className="text-white">Loading WebGL Replay Viewer...</div>
     </div>
-  )
+  ),
 });
 
 interface ReplayViewerWrapperProps {
@@ -18,10 +18,13 @@ interface ReplayViewerWrapperProps {
   gameDuration: number;
 }
 
-export default function ReplayViewerWrapper({ timeSeriesData, gameDuration }: ReplayViewerWrapperProps) {
+export default function ReplayViewerWrapper({
+  timeSeriesData,
+  gameDuration,
+}: ReplayViewerWrapperProps) {
   return (
-    <PixiReplayViewer 
-      timeSeriesData={timeSeriesData} 
+    <PixiReplayViewer
+      timeSeriesData={timeSeriesData}
       gameDuration={gameDuration}
     />
   );

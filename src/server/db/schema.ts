@@ -236,17 +236,20 @@ export const playersRelations = relations(players, ({ many }) => ({
   replayPlayers: many(replayPlayers),
 }));
 
-export const replayPlayersRelations = relations(replayPlayers, ({ one, many }) => ({
-  replay: one(replays, {
-    fields: [replayPlayers.replayId],
-    references: [replays.id],
+export const replayPlayersRelations = relations(
+  replayPlayers,
+  ({ one, many }) => ({
+    replay: one(replays, {
+      fields: [replayPlayers.replayId],
+      references: [replays.id],
+    }),
+    player: one(players, {
+      fields: [replayPlayers.playerId],
+      references: [players.id],
+    }),
+    buildOrders: many(buildOrders),
   }),
-  player: one(players, {
-    fields: [replayPlayers.playerId],
-    references: [players.id],
-  }),
-  buildOrders: many(buildOrders),
-}));
+);
 
 export const buildOrdersRelations = relations(buildOrders, ({ one }) => ({
   replayPlayer: one(replayPlayers, {
@@ -255,9 +258,12 @@ export const buildOrdersRelations = relations(buildOrders, ({ one }) => ({
   }),
 }));
 
-export const replaySnapshotsRelations = relations(replaySnapshots, ({ one }) => ({
-  replay: one(replays, {
-    fields: [replaySnapshots.replayId],
-    references: [replays.id],
+export const replaySnapshotsRelations = relations(
+  replaySnapshots,
+  ({ one }) => ({
+    replay: one(replays, {
+      fields: [replaySnapshots.replayId],
+      references: [replays.id],
+    }),
   }),
-}));
+);

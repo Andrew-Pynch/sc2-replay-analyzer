@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Slider } from "~/components/ui/slider";
@@ -49,76 +55,117 @@ function getTeamLightFillColor(team: number): string {
 }
 
 function interpolateUnitPositions(
-  beforeUnits: Array<{ type: string; x: number; y: number; unit_id?: number; vx?: number; vy?: number }>,
-  afterUnits: Array<{ type: string; x: number; y: number; unit_id?: number; vx?: number; vy?: number }>,
-  factor: number
-): Array<{ type: string; x: number; y: number; unit_id?: number; vx?: number; vy?: number }> {
-  const interpolatedUnits: Array<{ type: string; x: number; y: number; unit_id?: number; vx?: number; vy?: number }> = [];
-  
+  beforeUnits: Array<{
+    type: string;
+    x: number;
+    y: number;
+    unit_id?: number;
+    vx?: number;
+    vy?: number;
+  }>,
+  afterUnits: Array<{
+    type: string;
+    x: number;
+    y: number;
+    unit_id?: number;
+    vx?: number;
+    vy?: number;
+  }>,
+  factor: number,
+): Array<{
+  type: string;
+  x: number;
+  y: number;
+  unit_id?: number;
+  vx?: number;
+  vy?: number;
+}> {
+  const interpolatedUnits: Array<{
+    type: string;
+    x: number;
+    y: number;
+    unit_id?: number;
+    vx?: number;
+    vy?: number;
+  }> = [];
+
   // Create lookup maps by unit_id for efficient matching
-  const beforeUnitsMap = new Map(beforeUnits.map(unit => [unit.unit_id, unit]));
-  const afterUnitsMap = new Map(afterUnits.map(unit => [unit.unit_id, unit]));
-  
+  const beforeUnitsMap = new Map(
+    beforeUnits.map((unit) => [unit.unit_id, unit]),
+  );
+  const afterUnitsMap = new Map(afterUnits.map((unit) => [unit.unit_id, unit]));
+
   // Interpolate units that exist in both snapshots
-  beforeUnits.forEach(beforeUnit => {
+  beforeUnits.forEach((beforeUnit) => {
     if (!beforeUnit.unit_id) {
       interpolatedUnits.push(beforeUnit);
       return;
     }
-    
+
     const afterUnit = afterUnitsMap.get(beforeUnit.unit_id);
     if (!afterUnit) {
       // Unit disappeared, keep the before position
       interpolatedUnits.push(beforeUnit);
       return;
     }
-    
+
     // Linear interpolation of position
     const interpolatedX = beforeUnit.x + (afterUnit.x - beforeUnit.x) * factor;
     const interpolatedY = beforeUnit.y + (afterUnit.y - beforeUnit.y) * factor;
-    
+
     // Use velocity from the before unit for prediction if available
     const vx = beforeUnit.vx || 0;
     const vy = beforeUnit.vy || 0;
-    
+
     interpolatedUnits.push({
       type: beforeUnit.type,
       x: interpolatedX,
       y: interpolatedY,
       unit_id: beforeUnit.unit_id,
       vx: vx,
-      vy: vy
+      vy: vy,
     });
   });
-  
+
   // Add new units that only exist in the after snapshot
-  afterUnits.forEach(afterUnit => {
+  afterUnits.forEach((afterUnit) => {
     if (afterUnit.unit_id && !beforeUnitsMap.has(afterUnit.unit_id)) {
       interpolatedUnits.push(afterUnit);
     }
   });
-  
+
   return interpolatedUnits;
 }
 
-const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuration }) => {
+const ReplayViewer: React.FC<ReplayViewerProps> = ({
+  timeSeriesData,
+  gameDuration,
+}) => {
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(2); // 2x speed by default
-  
+
   // Zoom and pan state
   const [zoom, setZoom] = useState<number>(1);
   const [panX, setPanX] = useState<number>(0);
   const [panY, setPanY] = useState<number>(0);
-  
+
   // Drag state
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number; panX: number; panY: number } | null>(null);
-  
+  const [dragStart, setDragStart] = useState<{
+    x: number;
+    y: number;
+    panX: number;
+    panY: number;
+  } | null>(null);
+
   // Hover state
   const [hoveredUnit, setHoveredUnit] = useState<HoveredUnit | null>(null);
-  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  
+  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
+
   // Focus management
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -130,33 +177,33 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
 
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.code) {
-        case 'Space':
+        case "Space":
           e.preventDefault();
-          setIsPlaying(prev => !prev);
+          setIsPlaying((prev) => !prev);
           break;
-        case 'ArrowLeft':
+        case "ArrowLeft":
           e.preventDefault();
-          setCurrentTime(prev => Math.max(0, prev - 5));
+          setCurrentTime((prev) => Math.max(0, prev - 5));
           setIsPlaying(false);
           break;
-        case 'ArrowRight':
+        case "ArrowRight":
           e.preventDefault();
-          setCurrentTime(prev => Math.min(gameDuration, prev + 5));
+          setCurrentTime((prev) => Math.min(gameDuration, prev + 5));
           setIsPlaying(false);
           break;
-        case 'ArrowUp':
+        case "ArrowUp":
           e.preventDefault();
-          setPlaybackSpeed(prev => Math.min(8, prev * 2));
+          setPlaybackSpeed((prev) => Math.min(8, prev * 2));
           break;
-        case 'ArrowDown':
+        case "ArrowDown":
           e.preventDefault();
-          setPlaybackSpeed(prev => Math.max(0.5, prev / 2));
+          setPlaybackSpeed((prev) => Math.max(0.5, prev / 2));
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isFocused, gameDuration]);
 
   // Auto-play logic with requestAnimationFrame for smooth playback
@@ -173,7 +220,7 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
       setCurrentTime((prev) => {
         const increment = playbackSpeed * deltaTime;
         const next = prev + increment;
-        
+
         if (next >= gameDuration) {
           setIsPlaying(false);
           return gameDuration;
@@ -187,7 +234,7 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
     };
 
     animationFrameId = requestAnimationFrame(updateTime);
-    
+
     return () => {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
@@ -205,19 +252,20 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
     };
 
     if (isDragging) {
-      document.addEventListener('mouseup', handleDocumentMouseUp);
-      return () => document.removeEventListener('mouseup', handleDocumentMouseUp);
+      document.addEventListener("mouseup", handleDocumentMouseUp);
+      return () =>
+        document.removeEventListener("mouseup", handleDocumentMouseUp);
     }
   }, [isDragging]);
 
   // Get current snapshot data with interpolation
   const currentSnapshot = useMemo(() => {
     if (!timeSeriesData || timeSeriesData.length === 0) return null;
-    
+
     // Find surrounding snapshots for interpolation
     let beforeSnapshot: TimeSeriesSnapshot | null = null;
     let afterSnapshot: TimeSeriesSnapshot | null = null;
-    
+
     for (let i = 0; i < timeSeriesData.length; i++) {
       const snapshot = timeSeriesData[i]!;
       if (snapshot.timestamp <= currentTime) {
@@ -227,44 +275,55 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
         break;
       }
     }
-    
+
     // If no before snapshot, use the first one
     if (!beforeSnapshot) {
       return timeSeriesData[0] || null;
     }
-    
+
     // If no after snapshot or exact match, use the before snapshot
     if (!afterSnapshot || beforeSnapshot.timestamp === currentTime) {
       return beforeSnapshot;
     }
-    
+
     // Calculate interpolation factor
     const timeDelta = afterSnapshot.timestamp - beforeSnapshot.timestamp;
-    const interpolationFactor = (currentTime - beforeSnapshot.timestamp) / timeDelta;
-    
+    const interpolationFactor =
+      (currentTime - beforeSnapshot.timestamp) / timeDelta;
+
     // Create interpolated snapshot
     const interpolatedSnapshot: TimeSeriesSnapshot = {
       timestamp: currentTime,
-      players: {}
+      players: {},
     };
-    
+
     // Interpolate each player's units and buildings
-    Object.entries(beforeSnapshot.players).forEach(([playerId, beforePlayerData]) => {
-      const afterPlayerData = afterSnapshot!.players[playerId];
-      if (!afterPlayerData) {
-        interpolatedSnapshot.players[playerId] = beforePlayerData;
-        return;
-      }
-      
-      interpolatedSnapshot.players[playerId] = {
-        name: beforePlayerData.name,
-        race: beforePlayerData.race,
-        team: beforePlayerData.team,
-        units: interpolateUnitPositions(beforePlayerData.units, afterPlayerData.units, interpolationFactor),
-        buildings: interpolateUnitPositions(beforePlayerData.buildings, afterPlayerData.buildings, interpolationFactor)
-      };
-    });
-    
+    Object.entries(beforeSnapshot.players).forEach(
+      ([playerId, beforePlayerData]) => {
+        const afterPlayerData = afterSnapshot!.players[playerId];
+        if (!afterPlayerData) {
+          interpolatedSnapshot.players[playerId] = beforePlayerData;
+          return;
+        }
+
+        interpolatedSnapshot.players[playerId] = {
+          name: beforePlayerData.name,
+          race: beforePlayerData.race,
+          team: beforePlayerData.team,
+          units: interpolateUnitPositions(
+            beforePlayerData.units,
+            afterPlayerData.units,
+            interpolationFactor,
+          ),
+          buildings: interpolateUnitPositions(
+            beforePlayerData.buildings,
+            afterPlayerData.buildings,
+            interpolationFactor,
+          ),
+        };
+      },
+    );
+
     return interpolatedSnapshot;
   }, [timeSeriesData, currentTime]);
 
@@ -275,10 +334,11 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
     const units: UnitVisual[] = [];
 
     Object.entries(currentSnapshot.players).forEach(([, playerData]) => {
-      const race = getRaceFromUnit(playerData.race) ?? playerData.race.toLowerCase();
+      const race =
+        getRaceFromUnit(playerData.race) ?? playerData.race.toLowerCase();
 
       // Add buildings
-      playerData.buildings.forEach(building => {
+      playerData.buildings.forEach((building) => {
         units.push({
           type: building.type,
           x: building.x,
@@ -291,7 +351,7 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
       });
 
       // Add units
-      playerData.units.forEach(unit => {
+      playerData.units.forEach((unit) => {
         units.push({
           type: unit.type,
           x: unit.x,
@@ -309,7 +369,14 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
 
   // Group units by proximity (less aggressive grouping)
   const groupedUnits = useMemo(() => {
-    const groups: Array<{ units: UnitVisual[]; x: number; y: number; team: number; mainType: string; count: number }> = [];
+    const groups: Array<{
+      units: UnitVisual[];
+      x: number;
+      y: number;
+      team: number;
+      mainType: string;
+      count: number;
+    }> = [];
     const processedUnits = new Set<number>();
 
     visualUnits.forEach((unit, index) => {
@@ -330,11 +397,16 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
           if (index === otherIndex || processedUnits.has(otherIndex)) return;
 
           const distance = Math.sqrt(
-            Math.pow(unit.x - otherUnit.x, 2) + Math.pow(unit.y - otherUnit.y, 2)
+            Math.pow(unit.x - otherUnit.x, 2) +
+              Math.pow(unit.y - otherUnit.y, 2),
           );
 
           // Reduced distance threshold and only group same unit type
-          if (distance < 15 && unit.type === otherUnit.type && unit.team === otherUnit.team) {
+          if (
+            distance < 15 &&
+            unit.type === otherUnit.type &&
+            unit.team === otherUnit.team
+          ) {
             group.units.push(otherUnit);
             group.count++;
             processedUnits.add(otherIndex);
@@ -351,7 +423,7 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
 
   // Event handlers
   const handlePlayPause = useCallback(() => {
-    setIsPlaying(prev => !prev);
+    setIsPlaying((prev) => !prev);
   }, []);
 
   const handleTimeChange = useCallback((value: number[]) => {
@@ -360,65 +432,80 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
   }, []);
 
   const handleSkipBackward = useCallback(() => {
-    setCurrentTime(prev => Math.max(0, prev - 10));
+    setCurrentTime((prev) => Math.max(0, prev - 10));
     setIsPlaying(false);
   }, []);
 
   const handleSkipForward = useCallback(() => {
-    setCurrentTime(prev => Math.min(gameDuration, prev + 10));
+    setCurrentTime((prev) => Math.min(gameDuration, prev + 10));
     setIsPlaying(false);
   }, [gameDuration]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const zoomFactor = e.deltaY > 0 ? 0.8 : 1.25;
-    setZoom(prev => Math.max(0.5, Math.min(10, prev * zoomFactor)));
+    setZoom((prev) => Math.max(0.5, Math.min(10, prev * zoomFactor)));
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const currentMousePos = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
-    setMousePos(currentMousePos);
-    
-    // Handle dragging
-    if (isDragging && dragStart) {
-      const deltaX = currentMousePos.x - dragStart.x;
-      const deltaY = currentMousePos.y - dragStart.y;
-      
-      // Scale delta by zoom level (inverse - more zoomed = less pan per pixel)
-      const scaleFactor = 1000 / zoom / rect.width; // Adjust based on viewBox size
-      
-      setPanX(dragStart.panX - deltaX * scaleFactor);
-      setPanY(dragStart.panY - deltaY * scaleFactor);
-    }
-  }, [isDragging, dragStart, zoom]);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 0) { // Left mouse button
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
       const rect = e.currentTarget.getBoundingClientRect();
-      setIsDragging(true);
-      setDragStart({
+      const currentMousePos = {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
-        panX: panX,
-        panY: panY,
-      });
-    }
-  }, [panX, panY]);
+      };
+      setMousePos(currentMousePos);
+
+      // Handle dragging
+      if (isDragging && dragStart) {
+        const deltaX = currentMousePos.x - dragStart.x;
+        const deltaY = currentMousePos.y - dragStart.y;
+
+        // Scale delta by zoom level (inverse - more zoomed = less pan per pixel)
+        const scaleFactor = 1000 / zoom / rect.width; // Adjust based on viewBox size
+
+        setPanX(dragStart.panX - deltaX * scaleFactor);
+        setPanY(dragStart.panY - deltaY * scaleFactor);
+      }
+    },
+    [isDragging, dragStart, zoom],
+  );
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.button === 0) {
+        // Left mouse button
+        const rect = e.currentTarget.getBoundingClientRect();
+        setIsDragging(true);
+        setDragStart({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+          panX: panX,
+          panY: panY,
+        });
+      }
+    },
+    [panX, panY],
+  );
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
     setDragStart(null);
   }, []);
 
-  const handleUnitHover = useCallback((group: typeof groupedUnits[0], unit: UnitVisual, x: number, y: number) => {
-    setHoveredUnit({ unit, group, x, y });
-  }, []);
+  const handleUnitHover = useCallback(
+    (
+      group: (typeof groupedUnits)[0],
+      unit: UnitVisual,
+      x: number,
+      y: number,
+    ) => {
+      setHoveredUnit({ unit, group, x, y });
+    },
+    [],
+  );
 
   const handleMouseLeave = useCallback(() => {
     setHoveredUnit(null);
@@ -431,7 +518,7 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
           <CardTitle>Replay Viewer</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-500 text-center py-8">
+          <p className="py-8 text-center text-gray-500">
             No timeline data available for this replay.
           </p>
         </CardContent>
@@ -446,9 +533,9 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Game Visualization */}
-        <div 
+        <div
           ref={containerRef}
-          className={`relative w-full h-96 border rounded-lg bg-gray-900 overflow-hidden ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+          className={`relative h-96 w-full overflow-hidden rounded-lg border bg-gray-900 ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
           tabIndex={0}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
@@ -459,20 +546,20 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
           onMouseLeave={handleMouseLeave}
         >
           {/* Mini-map visualization */}
-          <svg 
+          <svg
             ref={svgRef}
-            width="100%" 
-            height="100%" 
+            width="100%"
+            height="100%"
             viewBox={`${panX} ${panY} ${1000 / zoom} ${1000 / zoom}`}
           >
             {groupedUnits.map((group, index) => {
               // Better coordinate scaling - SC2 maps are typically around 200x200
               const scaledX = (group.x / 200) * 1000;
               const scaledY = (group.y / 200) * 1000;
-              
+
               const radius = group.units[0]?.isBuilding ? 8 : 6;
               const adjustedRadius = Math.max(3, radius / Math.sqrt(zoom));
-              
+
               return (
                 <g key={`${index}-${group.mainType}`}>
                   {/* Unit/building representation */}
@@ -482,12 +569,18 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
                     r={adjustedRadius}
                     stroke={getTeamFillColor(group.team)}
                     strokeWidth={Math.max(1, 2 / Math.sqrt(zoom))}
-                    fill={hoveredUnit?.group === group ? getTeamFillColor(group.team) : getTeamLightFillColor(group.team)}
+                    fill={
+                      hoveredUnit?.group === group
+                        ? getTeamFillColor(group.team)
+                        : getTeamLightFillColor(group.team)
+                    }
                     opacity={0.8}
-                    style={{ cursor: 'pointer' }}
-                    onMouseEnter={() => handleUnitHover(group, group.units[0]!, scaledX, scaledY)}
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={() =>
+                      handleUnitHover(group, group.units[0]!, scaledX, scaledY)
+                    }
                   />
-                  
+
                   {/* Count indicator for grouped units */}
                   {group.count > 1 && zoom < 3 && (
                     <text
@@ -510,38 +603,46 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
 
           {/* Hover tooltip */}
           {hoveredUnit && (
-            <div 
-              className="absolute bg-black bg-opacity-90 text-white text-xs p-2 rounded pointer-events-none z-10"
+            <div
+              className="bg-opacity-90 pointer-events-none absolute z-10 rounded bg-black p-2 text-xs text-white"
               style={{
                 left: mousePos.x + 10,
                 top: mousePos.y - 10,
-                transform: mousePos.x > 300 ? 'translateX(-100%)' : 'none'
+                transform: mousePos.x > 300 ? "translateX(-100%)" : "none",
               }}
             >
               <div className="font-semibold">{hoveredUnit.unit.type}</div>
-              <div>Team {hoveredUnit.unit.team + 1} ({hoveredUnit.unit.race})</div>
-              <div>Position: ({Math.round(hoveredUnit.unit.x)}, {Math.round(hoveredUnit.unit.y)})</div>
+              <div>
+                Team {hoveredUnit.unit.team + 1} ({hoveredUnit.unit.race})
+              </div>
+              <div>
+                Position: ({Math.round(hoveredUnit.unit.x)},{" "}
+                {Math.round(hoveredUnit.unit.y)})
+              </div>
               {hoveredUnit.group.count > 1 && (
                 <div>Count: {hoveredUnit.group.count}</div>
               )}
-              {hoveredUnit.unit.isBuilding && <div className="text-blue-300">Building</div>}
+              {hoveredUnit.unit.isBuilding && (
+                <div className="text-blue-300">Building</div>
+              )}
             </div>
           )}
 
           {/* Time overlay */}
-          <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded">
+          <div className="bg-opacity-70 absolute top-4 left-4 rounded bg-black px-3 py-1 text-white">
             {formatTime(currentTime)} / {formatTime(gameDuration)}
           </div>
 
           {/* Zoom indicator */}
-          <div className="absolute top-4 right-4 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+          <div className="bg-opacity-70 absolute top-4 right-4 rounded bg-black px-2 py-1 text-xs text-white">
             {zoom.toFixed(1)}x
           </div>
 
           {/* Controls hint */}
           {isFocused && (
-            <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-              Space: Play/Pause | ←→: Skip ±5s | ↑↓: Speed | Scroll: Zoom | Drag: Pan
+            <div className="bg-opacity-70 absolute bottom-4 left-4 rounded bg-black px-2 py-1 text-xs text-white">
+              Space: Play/Pause | ←→: Skip ±5s | ↑↓: Speed | Scroll: Zoom |
+              Drag: Pan
             </div>
           )}
         </div>
@@ -562,11 +663,15 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
             <Button variant="outline" size="sm" onClick={handleSkipBackward}>
               <SkipBack className="h-4 w-4" />
             </Button>
-            
+
             <Button onClick={handlePlayPause} size="sm">
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {isPlaying ? (
+                <Pause className="h-4 w-4" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
             </Button>
-            
+
             <Button variant="outline" size="sm" onClick={handleSkipForward}>
               <SkipForward className="h-4 w-4" />
             </Button>
@@ -577,7 +682,7 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
               <select
                 value={playbackSpeed}
                 onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
-                className="text-sm border rounded px-2 py-1"
+                className="rounded border px-2 py-1 text-sm"
               >
                 <option value={0.5}>0.5x</option>
                 <option value={1}>1x</option>
@@ -590,17 +695,27 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ timeSeriesData, gameDuratio
         </div>
 
         {/* Current Units Summary */}
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-          {currentSnapshot && Object.entries(currentSnapshot.players).map(([playerId, playerData]) => (
-            <div key={playerId} className={`p-3 rounded-lg border ${getTeamBorderColor(playerData.team)} bg-gray-800 text-white`}>
-              <h4 className="font-semibold text-sm mb-2" style={{ color: getTeamFillColor(playerData.team) }}>
-                {playerData.name} ({playerData.race})
-              </h4>
-              <div className="text-xs text-gray-300">
-                Units: {playerData.units.length} | Buildings: {playerData.buildings.length}
-              </div>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 gap-4 border-t pt-4">
+          {currentSnapshot &&
+            Object.entries(currentSnapshot.players).map(
+              ([playerId, playerData]) => (
+                <div
+                  key={playerId}
+                  className={`rounded-lg border p-3 ${getTeamBorderColor(playerData.team)} bg-gray-800 text-white`}
+                >
+                  <h4
+                    className="mb-2 text-sm font-semibold"
+                    style={{ color: getTeamFillColor(playerData.team) }}
+                  >
+                    {playerData.name} ({playerData.race})
+                  </h4>
+                  <div className="text-xs text-gray-300">
+                    Units: {playerData.units.length} | Buildings:{" "}
+                    {playerData.buildings.length}
+                  </div>
+                </div>
+              ),
+            )}
         </div>
       </CardContent>
     </Card>

@@ -15,7 +15,7 @@ A comprehensive StarCraft II replay analysis tool built with the T3 Stack that p
 ## Tech Stack
 
 - **Frontend**: Next.js 15 with React 19, TypeScript, Tailwind CSS
-- **Backend**: T3 Stack with Drizzle ORM and SQLite database  
+- **Backend**: T3 Stack with Drizzle ORM and SQLite database
 - **Authentication**: NextAuth.js (configured but optional for replay analysis)
 - **Replay Parsing**: Python with sc2reader library
 - **UI Components**: Shadcn/ui component library
@@ -95,8 +95,9 @@ Results are automatically cached in the database for faster subsequent access.
 ## Database Schema
 
 The application uses four main tables:
+
 - `replays`: Game metadata and information
-- `players`: Player information (name, race)  
+- `players`: Player information (name, race)
 - `replay_players`: Junction table linking players to replays with statistics
 - `build_orders`: Build order sequences for each player
 
@@ -120,7 +121,8 @@ This project follows standard Next.js and T3 Stack conventions. All replay analy
 ## Built With T3 Stack
 
 This project was bootstrapped with [create-t3-app](https://create.t3.gg/) and includes:
+
 - [Next.js](https://nextjs.org) - React framework
-- [Drizzle](https://orm.drizzle.team) - TypeScript ORM  
+- [Drizzle](https://orm.drizzle.team) - TypeScript ORM
 - [Tailwind CSS](https://tailwindcss.com) - Utility-first CSS
 - [NextAuth.js](https://next-auth.js.org) - Authentication

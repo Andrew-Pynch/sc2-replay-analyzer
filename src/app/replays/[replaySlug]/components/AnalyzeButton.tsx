@@ -14,9 +14,13 @@ interface AnalyzeButtonProps {
   isReAnalysis?: boolean;
 }
 
-export default function AnalyzeButton({ filename, slug, isReAnalysis = false }: AnalyzeButtonProps) {
+export default function AnalyzeButton({
+  filename,
+  slug,
+  isReAnalysis = false,
+}: AnalyzeButtonProps) {
   const router = useRouter();
-  
+
   const analyzeReplayMutation = useMutation({
     mutationFn: () => analyzeReplay(filename, slug),
     onSuccess: () => {
@@ -31,13 +35,14 @@ export default function AnalyzeButton({ filename, slug, isReAnalysis = false }: 
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-semibold">
-            {isReAnalysis ? "Re-analyze with latest stats" : "Ready to analyze replay"}
+            {isReAnalysis
+              ? "Re-analyze with latest stats"
+              : "Ready to analyze replay"}
           </h3>
           <p className="text-sm text-gray-600">
-            {isReAnalysis 
+            {isReAnalysis
               ? "Run the analysis again with the latest improvements to get updated insights"
-              : "This will extract player statistics, build orders, and game insights"
-            }
+              : "This will extract player statistics, build orders, and game insights"}
           </p>
         </div>
         <Button
@@ -71,7 +76,7 @@ export default function AnalyzeButton({ filename, slug, isReAnalysis = false }: 
           </AlertDescription>
         </Alert>
       )}
-      
+
       {analyzeReplayMutation.isPending && (
         <Alert>
           <AlertDescription>

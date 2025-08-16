@@ -4,15 +4,18 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: var(--font-orbitron), var(--font-geist-sans), "Eurostile", "Eurostile Extended", 
-    "Arial Black", ui-sans-serif, system-ui, sans-serif,
+  --font-sans:
+    var(--font-orbitron), var(--font-geist-sans), "Eurostile",
+    "Eurostile Extended", "Arial Black", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", "Monaco", "Inconsolata", 
+  --font-mono:
+    "JetBrains Mono", "Fira Code", "SF Mono", "Monaco", "Inconsolata",
     "Roboto Mono", "Source Code Pro", "Ubuntu Mono", "Droid Sans Mono",
     "Courier New", monospace;
-  --font-terminal: "JetBrains Mono", "Fira Code", "SF Mono", "Monaco", 
-    "Courier New", monospace;
-  --font-sc2: var(--font-orbitron), "Eurostile", "Eurostile Extended", "Arial Black", 
+  --font-terminal:
+    "JetBrains Mono", "Fira Code", "SF Mono", "Monaco", "Courier New", monospace;
+  --font-sc2:
+    var(--font-orbitron), "Eurostile", "Eurostile Extended", "Arial Black",
     "Impact", sans-serif;
 }
 
@@ -103,7 +106,9 @@
   --secondary: oklch(0.12 0.04 225); /* Darker navy for secondary elements */
   --secondary-foreground: oklch(0.8 0.12 200);
   --muted: oklch(0.1 0.03 230);
-  --muted-foreground: oklch(0.75 0.12 200); /* Brighter dimmed light blue for better readability */
+  --muted-foreground: oklch(
+    0.75 0.12 200
+  ); /* Brighter dimmed light blue for better readability */
   --accent: oklch(0.8 0.2 200); /* Bright light blue for accents */
   --accent-foreground: oklch(0.03 0.01 240);
   --destructive: oklch(0.65 0.25 15); /* Orange-red for destructive actions */
@@ -123,21 +128,18 @@
   --sidebar-accent-foreground: oklch(0.8 0.12 200);
   --sidebar-border: oklch(0.75 0.15 200 / 60%);
   --sidebar-ring: oklch(0.8 0.2 200);
-  
+
   /* SC2 Neon Glow Effects */
-  --neon-text-glow: 
-    0 0 2px oklch(0.8 0.2 200),
-    0 0 5px oklch(0.8 0.2 200 / 60%),
+  --neon-text-glow:
+    0 0 2px oklch(0.8 0.2 200), 0 0 5px oklch(0.8 0.2 200 / 60%),
     0 0 10px oklch(0.8 0.2 200 / 30%);
-  --neon-border-glow: 
-    0 0 3px oklch(0.8 0.2 200),
-    0 0 8px oklch(0.8 0.2 200 / 40%),
+  --neon-border-glow:
+    0 0 3px oklch(0.8 0.2 200), 0 0 8px oklch(0.8 0.2 200 / 40%),
     inset 0 0 3px oklch(0.8 0.2 200 / 20%);
-  --neon-strong-glow: 
-    0 0 5px oklch(0.8 0.2 200),
-    0 0 15px oklch(0.8 0.2 200 / 50%),
+  --neon-strong-glow:
+    0 0 5px oklch(0.8 0.2 200), 0 0 15px oklch(0.8 0.2 200 / 50%),
     0 0 25px oklch(0.8 0.2 200 / 20%);
-  
+
   /* CRT Effect Controls - Easy to adjust 
    * 
    * PRESETS:
@@ -157,12 +159,12 @@
   * {
     @apply border-border outline-ring/50;
   }
-  
+
   /* Override Tailwind gray colors for better readability in dark theme */
   .text-gray-600 {
     color: oklch(0.75 0.08 200) !important;
   }
-  
+
   .text-gray-500 {
     color: oklch(0.68 0.06 200) !important;
   }
@@ -173,43 +175,52 @@
     letter-spacing: 0.025em;
     text-shadow: var(--neon-text-glow);
   }
-  
+
   /* SC2-style headings */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-sc2);
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
-  
+
   /* Terminal elements keep monospace */
-  code, pre, kbd, samp, .font-mono {
+  code,
+  pre,
+  kbd,
+  samp,
+  .font-mono {
     font-family: var(--font-terminal) !important;
   }
-  
+
   /* Neon text effects */
   .neon-text {
     text-shadow: var(--neon-text-glow);
   }
-  
+
   .neon-text-strong {
     text-shadow: var(--neon-strong-glow);
   }
-  
+
   /* Neon border effects */
   .neon-border {
     box-shadow: var(--neon-border-glow);
     border: 1px solid oklch(0.8 0.2 200);
   }
-  
+
   .neon-border-strong {
     box-shadow: var(--neon-strong-glow);
     border: 1px solid oklch(0.8 0.2 200);
   }
-  
+
   /* CRT scan lines - static overlay with subtle pulse */
   .crt-lines::before {
-    content: '';
+    content: "";
     position: fixed;
     top: 0;
     left: 0;
@@ -228,24 +239,24 @@
     z-index: 1000;
     animation: scanline-pulse 4s ease-in-out infinite;
   }
-  
+
   /* CRT screen curvature and glow */
   .crt-screen {
     border-radius: var(--crt-curvature);
-    box-shadow: 
+    box-shadow:
       inset 0 0 0 1px oklch(0.8 0.2 200 / 20%),
       0 0 var(--crt-glow-strength) oklch(0.8 0.2 200 / var(--crt-noise-opacity));
   }
-  
+
   /* CRT noise overlay */
   .crt-noise::after {
-    content: '';
+    content: "";
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: 
+    background:
       repeating-conic-gradient(
         from 0deg at 50% 50%,
         transparent 0deg,
@@ -263,86 +274,121 @@
     mix-blend-mode: overlay;
     /* Removed terminal-flicker to prevent conflicts and white flashing */
   }
-  
+
   /* Terminal animations */
   @keyframes terminal-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
   }
-  
+
   @keyframes terminal-flicker {
-    0%, 100% { opacity: 1; }
-    98% { opacity: 1; }
-    99% { opacity: var(--crt-flicker-intensity); }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    98% {
+      opacity: 1;
+    }
+    99% {
+      opacity: var(--crt-flicker-intensity);
+    }
   }
-  
+
   @keyframes scanline-pulse {
-    0%, 100% { 
-      opacity: 1; 
+    0%,
+    100% {
+      opacity: 1;
     }
-    50% { 
-      opacity: 0.7; 
+    50% {
+      opacity: 0.7;
     }
   }
-  
+
   @keyframes data-stream {
-    0% { transform: translateX(-100%); opacity: 0; }
-    20% { opacity: 1; }
-    80% { opacity: 1; }
-    100% { transform: translateX(100%); opacity: 0; }
+    0% {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(100%);
+      opacity: 0;
+    }
   }
-  
+
   @keyframes terminal-boot {
-    0% { 
-      opacity: 0; 
-      transform: scale(0.8); 
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
       filter: brightness(0.3);
     }
-    50% { 
-      opacity: 0.8; 
-      transform: scale(1.02); 
+    50% {
+      opacity: 0.8;
+      transform: scale(1.02);
       filter: brightness(1.2);
     }
-    100% { 
-      opacity: 1; 
-      transform: scale(1); 
+    100% {
+      opacity: 1;
+      transform: scale(1);
       filter: brightness(1);
     }
   }
-  
+
   /* Apply CRT effects to the entire app */
   html.crt-mode {
     /* Removed terminal-flicker to prevent white flashing */
   }
-  
+
   html.crt-mode body {
     animation: terminal-boot 1.5s ease-out;
   }
-  
+
   /* Terminal cursor */
   .terminal-cursor::after {
-    content: '█';
+    content: "█";
     animation: terminal-pulse 1s infinite;
     color: oklch(0.8 0.2 200);
     text-shadow: var(--neon-text-glow);
   }
-  
+
   /* Glitch effect for errors */
   @keyframes glitch {
-    0% { transform: translate(0); }
-    20% { transform: translate(-2px, 2px); }
-    40% { transform: translate(-2px, -2px); }
-    60% { transform: translate(2px, 2px); }
-    80% { transform: translate(2px, -2px); }
-    100% { transform: translate(0); }
+    0% {
+      transform: translate(0);
+    }
+    20% {
+      transform: translate(-2px, 2px);
+    }
+    40% {
+      transform: translate(-2px, -2px);
+    }
+    60% {
+      transform: translate(2px, 2px);
+    }
+    80% {
+      transform: translate(2px, -2px);
+    }
+    100% {
+      transform: translate(0);
+    }
   }
-  
+
   .glitch-effect {
     animation: glitch 0.3s infinite;
   }
-  
+
   /* SC2 Theme Global Component Overrides */
-  
+
   /* Progress bars - energy meter style */
   [role="progressbar"] {
     background: oklch(0.15 0.06 230);
@@ -351,16 +397,18 @@
     overflow: hidden;
     box-shadow: inset 0 1px 3px oklch(0.05 0.02 240 / 50%);
   }
-  
+
   [role="progressbar"] > div {
-    background: linear-gradient(90deg, 
-      oklch(0.6 0.25 180), 
+    background: linear-gradient(
+      90deg,
+      oklch(0.6 0.25 180),
       oklch(0.7 0.2 200),
-      oklch(0.6 0.25 180));
+      oklch(0.6 0.25 180)
+    );
     box-shadow: 0 0 10px oklch(0.6 0.25 180 / 50%);
     transition: all 0.3s ease;
   }
-  
+
   /* Tables - data grid style */
   table {
     border: 1px solid oklch(0.25 0.08 220 / 60%);
@@ -368,7 +416,7 @@
     background: oklch(0.1 0.04 235 / 50%);
     backdrop-filter: blur(4px);
   }
-  
+
   th {
     background: oklch(0.15 0.06 230);
     border-bottom: 2px solid oklch(0.6 0.25 180 / 40%);
@@ -378,17 +426,17 @@
     letter-spacing: 0.05em;
     text-shadow: 0 0 3px oklch(0.6 0.25 180 / 30%);
   }
-  
+
   td {
     border-bottom: 1px solid oklch(0.25 0.08 220 / 30%);
     font-family: var(--font-mono);
   }
-  
+
   tr:hover {
     background: oklch(0.15 0.06 230 / 50%);
     box-shadow: 0 0 5px oklch(0.6 0.25 180 / 20%);
   }
-  
+
   /* Badges - status indicator style */
   [data-slot="badge"] {
     font-family: var(--font-mono);
@@ -400,47 +448,47 @@
     border: 1px solid oklch(0.25 0.08 220 / 60%);
     text-shadow: 0 0 3px currentColor;
   }
-  
+
   /* Dialogs - terminal window style */
   [role="dialog"] {
     background: oklch(0.08 0.03 240);
     border: 2px solid oklch(0.6 0.25 180 / 60%);
     border-radius: 4px;
-    box-shadow: 
+    box-shadow:
       0 0 30px oklch(0.6 0.25 180 / 30%),
       inset 0 1px 0 oklch(0.6 0.25 180 / 20%);
     backdrop-filter: blur(8px);
   }
-  
+
   /* Scrollbars */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
-  
+
   ::-webkit-scrollbar-track {
     background: oklch(0.12 0.05 235);
     border-radius: 2px;
   }
-  
+
   ::-webkit-scrollbar-thumb {
     background: oklch(0.6 0.25 180 / 60%);
     border-radius: 2px;
     border: 1px solid oklch(0.25 0.08 220);
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
     background: oklch(0.6 0.25 180 / 80%);
     box-shadow: 0 0 5px oklch(0.6 0.25 180 / 50%);
   }
-  
+
   /* Selection */
   ::selection {
     background: oklch(0.6 0.25 180 / 40%);
     color: oklch(0.95 0.02 240);
     text-shadow: 0 0 3px oklch(0.6 0.25 180);
   }
-  
+
   /* Focus outline for accessibility */
   :focus-visible {
     outline: 2px solid oklch(0.65 0.2 185);

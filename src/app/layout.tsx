@@ -26,7 +26,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable} ${orbitron.variable} dark crt-mode`}>
+    <html
+      lang="en"
+      className={`${geist.variable} ${orbitron.variable} dark crt-mode`}
+    >
       <body className="crt-screen crt-lines crt-noise">
         <QueryProvider>{children}</QueryProvider>
       </body>

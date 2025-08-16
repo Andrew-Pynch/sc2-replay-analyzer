@@ -1,12 +1,22 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Slider } from "~/components/ui/slider";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { Application, extend } from "@pixi/react";
-import { Container, Graphics as PIXIGraphics, FederatedPointerEvent } from "pixi.js";
+import {
+  Container,
+  Graphics as PIXIGraphics,
+  FederatedPointerEvent,
+} from "pixi.js";
 import { getRaceFromUnit } from "~/lib/unit-icons";
 import { type TimeSeriesSnapshot } from "../../actions";
 
@@ -52,79 +62,112 @@ function getTeamLightColor(team: number): number {
 
 // Interpolation function (same as before but optimized for Pixi)
 function interpolateUnitPositions(
-  beforeUnits: Array<{ type: string; x: number; y: number; unit_id?: number; vx?: number; vy?: number }>,
-  afterUnits: Array<{ type: string; x: number; y: number; unit_id?: number; vx?: number; vy?: number }>,
-  factor: number
-): Array<{ type: string; x: number; y: number; unit_id?: number; vx?: number; vy?: number }> {
-  const interpolatedUnits: Array<{ type: string; x: number; y: number; unit_id?: number; vx?: number; vy?: number }> = [];
-  
-  const beforeUnitsMap = new Map(beforeUnits.map(unit => [unit.unit_id, unit]));
-  const afterUnitsMap = new Map(afterUnits.map(unit => [unit.unit_id, unit]));
-  
+  beforeUnits: Array<{
+    type: string;
+    x: number;
+    y: number;
+    unit_id?: number;
+    vx?: number;
+    vy?: number;
+  }>,
+  afterUnits: Array<{
+    type: string;
+    x: number;
+    y: number;
+    unit_id?: number;
+    vx?: number;
+    vy?: number;
+  }>,
+  factor: number,
+): Array<{
+  type: string;
+  x: number;
+  y: number;
+  unit_id?: number;
+  vx?: number;
+  vy?: number;
+}> {
+  const interpolatedUnits: Array<{
+    type: string;
+    x: number;
+    y: number;
+    unit_id?: number;
+    vx?: number;
+    vy?: number;
+  }> = [];
+
+  const beforeUnitsMap = new Map(
+    beforeUnits.map((unit) => [unit.unit_id, unit]),
+  );
+  const afterUnitsMap = new Map(afterUnits.map((unit) => [unit.unit_id, unit]));
+
   // Interpolate units that exist in both snapshots
-  beforeUnits.forEach(beforeUnit => {
+  beforeUnits.forEach((beforeUnit) => {
     if (!beforeUnit.unit_id) {
       interpolatedUnits.push(beforeUnit);
       return;
     }
-    
+
     const afterUnit = afterUnitsMap.get(beforeUnit.unit_id);
     if (!afterUnit) {
       interpolatedUnits.push(beforeUnit);
       return;
     }
-    
+
     const interpolatedX = beforeUnit.x + (afterUnit.x - beforeUnit.x) * factor;
     const interpolatedY = beforeUnit.y + (afterUnit.y - beforeUnit.y) * factor;
-    
+
     interpolatedUnits.push({
       type: beforeUnit.type,
       x: interpolatedX,
       y: interpolatedY,
       unit_id: beforeUnit.unit_id,
       vx: beforeUnit.vx || 0,
-      vy: beforeUnit.vy || 0
+      vy: beforeUnit.vy || 0,
     });
   });
-  
+
   // Add new units that only exist in the after snapshot
-  afterUnits.forEach(afterUnit => {
+  afterUnits.forEach((afterUnit) => {
     if (afterUnit.unit_id && !beforeUnitsMap.has(afterUnit.unit_id)) {
       interpolatedUnits.push(afterUnit);
     }
   });
-  
+
   return interpolatedUnits;
 }
 
 // No viewport for now - let's get basic rendering working first
 
 // Enhanced units display component with shapes and hover
-const UnitsRenderer: React.FC<{ 
+const UnitsRenderer: React.FC<{
   units: UnitVisual[];
   onUnitHover?: (unit: UnitVisual | null, x: number, y: number) => void;
 }> = ({ units, onUnitHover }) => {
   const draw = useCallback(
     (graphics: PIXIGraphics) => {
       graphics.clear();
-      
+
       units.forEach((unit) => {
         // Scale coordinates - SC2 maps are typically around 200x200
         const scaledX = (unit.x / 200) * 800; // Scale to canvas width
         const scaledY = (unit.y / 200) * 384; // Scale to canvas height
-        
+
         const color = getTeamColor(unit.team);
         const lightColor = getTeamLightColor(unit.team);
-        
+
         // Determine unit category and draw appropriate shape
         const unitType = unit.type.toLowerCase();
-        const isWorker = unitType.includes('scv') || unitType.includes('drone') || unitType.includes('probe');
-        
+        const isWorker =
+          unitType.includes("scv") ||
+          unitType.includes("drone") ||
+          unitType.includes("probe");
+
         if (unit.isBuilding) {
           // Buildings: Squares
           const size = 12;
           graphics
-            .rect(scaledX - size/2, scaledY - size/2, size, size)
+            .rect(scaledX - size / 2, scaledY - size / 2, size, size)
             .fill(lightColor)
             .stroke({ color: color, width: 2 });
         } else if (isWorker) {
@@ -147,45 +190,56 @@ const UnitsRenderer: React.FC<{
         }
       });
     },
-    [units]
+    [units],
   );
 
   const handlePointerMove = useCallback(
     (event: FederatedPointerEvent) => {
       if (!onUnitHover) return;
-      
+
       const { x, y } = event.global;
-      
+
       // Find unit under cursor
       const hoveredUnit = units.find((unit) => {
         const scaledX = (unit.x / 200) * 800;
         const scaledY = (unit.y / 200) * 384;
-        
+
         // Different hit detection based on shape
         const unitType = unit.type.toLowerCase();
-        const isWorker = unitType.includes('scv') || unitType.includes('drone') || unitType.includes('probe');
-        
+        const isWorker =
+          unitType.includes("scv") ||
+          unitType.includes("drone") ||
+          unitType.includes("probe");
+
         if (unit.isBuilding) {
           // Square hit detection
           const size = 12;
-          return x >= scaledX - size/2 && x <= scaledX + size/2 && 
-                 y >= scaledY - size/2 && y <= scaledY + size/2;
+          return (
+            x >= scaledX - size / 2 &&
+            x <= scaledX + size / 2 &&
+            y >= scaledY - size / 2 &&
+            y <= scaledY + size / 2
+          );
         } else if (isWorker) {
           // Circle hit detection
           const radius = 5;
-          const distance = Math.sqrt(Math.pow(x - scaledX, 2) + Math.pow(y - scaledY, 2));
+          const distance = Math.sqrt(
+            Math.pow(x - scaledX, 2) + Math.pow(y - scaledY, 2),
+          );
           return distance <= radius;
         } else {
           // Triangle hit detection (approximate as circle)
           const radius = 8;
-          const distance = Math.sqrt(Math.pow(x - scaledX, 2) + Math.pow(y - scaledY, 2));
+          const distance = Math.sqrt(
+            Math.pow(x - scaledX, 2) + Math.pow(y - scaledY, 2),
+          );
           return distance <= radius;
         }
       });
-      
+
       onUnitHover(hoveredUnit || null, x, y);
     },
-    [units, onUnitHover]
+    [units, onUnitHover],
   );
 
   return (
@@ -198,22 +252,28 @@ const UnitsRenderer: React.FC<{
   );
 };
 
-const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gameDuration }) => {
+const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({
+  timeSeriesData,
+  gameDuration,
+}) => {
   // Don't render on server-side
   const [isClient, setIsClient] = useState(false);
-  
+
   useEffect(() => {
     setIsClient(true);
   }, []);
-  
+
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(2);
-  
+
   // Hover state
   const [hoveredUnit, setHoveredUnit] = useState<HoveredUnit | null>(null);
-  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  
+  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
+
   // Focus management
   const [isFocused, setIsFocused] = useState<boolean>(false);
 
@@ -223,33 +283,33 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
 
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.code) {
-        case 'Space':
+        case "Space":
           e.preventDefault();
-          setIsPlaying(prev => !prev);
+          setIsPlaying((prev) => !prev);
           break;
-        case 'ArrowLeft':
+        case "ArrowLeft":
           e.preventDefault();
-          setCurrentTime(prev => Math.max(0, prev - 5));
+          setCurrentTime((prev) => Math.max(0, prev - 5));
           setIsPlaying(false);
           break;
-        case 'ArrowRight':
+        case "ArrowRight":
           e.preventDefault();
-          setCurrentTime(prev => Math.min(gameDuration, prev + 5));
+          setCurrentTime((prev) => Math.min(gameDuration, prev + 5));
           setIsPlaying(false);
           break;
-        case 'ArrowUp':
+        case "ArrowUp":
           e.preventDefault();
-          setPlaybackSpeed(prev => Math.min(8, prev * 2));
+          setPlaybackSpeed((prev) => Math.min(8, prev * 2));
           break;
-        case 'ArrowDown':
+        case "ArrowDown":
           e.preventDefault();
-          setPlaybackSpeed(prev => Math.max(0.5, prev / 2));
+          setPlaybackSpeed((prev) => Math.max(0.5, prev / 2));
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isFocused, gameDuration]);
 
   // Auto-play logic with requestAnimationFrame
@@ -266,7 +326,7 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
       setCurrentTime((prev) => {
         const increment = playbackSpeed * deltaTime;
         const next = prev + increment;
-        
+
         if (next >= gameDuration) {
           setIsPlaying(false);
           return gameDuration;
@@ -280,7 +340,7 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
     };
 
     animationFrameId = requestAnimationFrame(updateTime);
-    
+
     return () => {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
@@ -291,11 +351,11 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
   // Get current snapshot data with interpolation (optimized for Pixi)
   const currentUnits = useMemo(() => {
     if (!timeSeriesData || timeSeriesData.length === 0) return [];
-    
+
     // Find surrounding snapshots for interpolation
     let beforeSnapshot: TimeSeriesSnapshot | null = null;
     let afterSnapshot: TimeSeriesSnapshot | null = null;
-    
+
     for (let i = 0; i < timeSeriesData.length; i++) {
       const snapshot = timeSeriesData[i]!;
       if (snapshot.timestamp <= currentTime) {
@@ -305,69 +365,83 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
         break;
       }
     }
-    
+
     if (!beforeSnapshot) {
       return [];
     }
-    
-    const units: UnitVisual[] = [];
-    
-    // Process each player's units
-    Object.entries(beforeSnapshot.players).forEach(([playerId, beforePlayerData]) => {
-      const race = getRaceFromUnit(beforePlayerData.race) ?? beforePlayerData.race.toLowerCase();
-      
-      let currentUnits = beforePlayerData.units;
-      let currentBuildings = beforePlayerData.buildings;
-      
-      // Apply interpolation if we have an after snapshot
-      if (afterSnapshot && beforeSnapshot.timestamp !== currentTime) {
-        const afterPlayerData = afterSnapshot.players[playerId];
-        if (afterPlayerData) {
-          const timeDelta = afterSnapshot.timestamp - beforeSnapshot.timestamp;
-          const interpolationFactor = (currentTime - beforeSnapshot.timestamp) / timeDelta;
-          
-          currentUnits = interpolateUnitPositions(beforePlayerData.units, afterPlayerData.units, interpolationFactor);
-          currentBuildings = interpolateUnitPositions(beforePlayerData.buildings, afterPlayerData.buildings, interpolationFactor);
-        }
-      }
-      
-      // Add buildings
-      currentBuildings.forEach(building => {
-        units.push({
-          type: building.type,
-          x: building.x,
-          y: building.y,
-          team: beforePlayerData.team,
-          race: race,
-          isBuilding: true,
-          unit_id: building.unit_id,
-          vx: building.vx,
-          vy: building.vy
-        });
-      });
 
-      // Add units
-      currentUnits.forEach(unit => {
-        units.push({
-          type: unit.type,
-          x: unit.x,
-          y: unit.y,
-          team: beforePlayerData.team,
-          race: race,
-          isBuilding: false,
-          unit_id: unit.unit_id,
-          vx: unit.vx,
-          vy: unit.vy
+    const units: UnitVisual[] = [];
+
+    // Process each player's units
+    Object.entries(beforeSnapshot.players).forEach(
+      ([playerId, beforePlayerData]) => {
+        const race =
+          getRaceFromUnit(beforePlayerData.race) ??
+          beforePlayerData.race.toLowerCase();
+
+        let currentUnits = beforePlayerData.units;
+        let currentBuildings = beforePlayerData.buildings;
+
+        // Apply interpolation if we have an after snapshot
+        if (afterSnapshot && beforeSnapshot.timestamp !== currentTime) {
+          const afterPlayerData = afterSnapshot.players[playerId];
+          if (afterPlayerData) {
+            const timeDelta =
+              afterSnapshot.timestamp - beforeSnapshot.timestamp;
+            const interpolationFactor =
+              (currentTime - beforeSnapshot.timestamp) / timeDelta;
+
+            currentUnits = interpolateUnitPositions(
+              beforePlayerData.units,
+              afterPlayerData.units,
+              interpolationFactor,
+            );
+            currentBuildings = interpolateUnitPositions(
+              beforePlayerData.buildings,
+              afterPlayerData.buildings,
+              interpolationFactor,
+            );
+          }
+        }
+
+        // Add buildings
+        currentBuildings.forEach((building) => {
+          units.push({
+            type: building.type,
+            x: building.x,
+            y: building.y,
+            team: beforePlayerData.team,
+            race: race,
+            isBuilding: true,
+            unit_id: building.unit_id,
+            vx: building.vx,
+            vy: building.vy,
+          });
         });
-      });
-    });
-    
+
+        // Add units
+        currentUnits.forEach((unit) => {
+          units.push({
+            type: unit.type,
+            x: unit.x,
+            y: unit.y,
+            team: beforePlayerData.team,
+            race: race,
+            isBuilding: false,
+            unit_id: unit.unit_id,
+            vx: unit.vx,
+            vy: unit.vy,
+          });
+        });
+      },
+    );
+
     return units;
   }, [timeSeriesData, currentTime]);
 
   // Event handlers
   const handlePlayPause = useCallback(() => {
-    setIsPlaying(prev => !prev);
+    setIsPlaying((prev) => !prev);
   }, []);
 
   const handleTimeChange = useCallback((value: number[]) => {
@@ -376,23 +450,26 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
   }, []);
 
   const handleSkipBackward = useCallback(() => {
-    setCurrentTime(prev => Math.max(0, prev - 10));
+    setCurrentTime((prev) => Math.max(0, prev - 10));
     setIsPlaying(false);
   }, []);
 
   const handleSkipForward = useCallback(() => {
-    setCurrentTime(prev => Math.min(gameDuration, prev + 10));
+    setCurrentTime((prev) => Math.min(gameDuration, prev + 10));
     setIsPlaying(false);
   }, [gameDuration]);
 
-  const handleUnitHover = useCallback((unit: UnitVisual | null, x: number, y: number) => {
-    if (unit) {
-      setHoveredUnit({ unit, x, y });
-      setMousePos({ x, y });
-    } else {
-      setHoveredUnit(null);
-    }
-  }, []);
+  const handleUnitHover = useCallback(
+    (unit: UnitVisual | null, x: number, y: number) => {
+      if (unit) {
+        setHoveredUnit({ unit, x, y });
+        setMousePos({ x, y });
+      } else {
+        setHoveredUnit(null);
+      }
+    },
+    [],
+  );
 
   // Don't render Pixi.js on server-side
   if (!isClient) {
@@ -402,7 +479,7 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
           <CardTitle>High-Performance Replay Viewer (Loading...)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="w-full h-96 border rounded-lg bg-gray-900 flex items-center justify-center">
+          <div className="flex h-96 w-full items-center justify-center rounded-lg border bg-gray-900">
             <div className="text-white">Loading Pixi.js...</div>
           </div>
         </CardContent>
@@ -417,7 +494,7 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
           <CardTitle>Replay Viewer</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-500 text-center py-8">
+          <p className="py-8 text-center text-gray-500">
             No timeline data available for this replay.
           </p>
         </CardContent>
@@ -432,8 +509,8 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Game Visualization */}
-        <div 
-          className="relative w-full h-96 border rounded-lg bg-gray-900 overflow-hidden"
+        <div
+          className="relative h-96 w-full overflow-hidden rounded-lg border bg-gray-900"
           tabIndex={0}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
@@ -443,11 +520,13 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
             height={384}
             backgroundColor={0x111827} // gray-900
             antialias={true}
-            resolution={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
+            resolution={
+              typeof window !== "undefined" ? window.devicePixelRatio : 1
+            }
             autoDensity={true}
           >
             <pixiContainer>
-              <UnitsRenderer 
+              <UnitsRenderer
                 units={currentUnits}
                 onUnitHover={handleUnitHover}
               />
@@ -456,47 +535,58 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
 
           {/* Hover tooltip */}
           {hoveredUnit && (
-            <div 
-              className="absolute bg-black bg-opacity-90 text-white text-xs p-2 rounded pointer-events-none z-10"
+            <div
+              className="bg-opacity-90 pointer-events-none absolute z-10 rounded bg-black p-2 text-xs text-white"
               style={{
                 left: mousePos.x + 10,
                 top: mousePos.y - 10,
-                transform: mousePos.x > 300 ? 'translateX(-100%)' : 'none'
+                transform: mousePos.x > 300 ? "translateX(-100%)" : "none",
               }}
             >
               <div className="font-semibold">{hoveredUnit.unit.type}</div>
-              <div>Team {hoveredUnit.unit.team + 1} ({hoveredUnit.unit.race})</div>
-              <div>Position: ({Math.round(hoveredUnit.unit.x)}, {Math.round(hoveredUnit.unit.y)})</div>
-              {hoveredUnit.unit.isBuilding && <div className="text-blue-300">Building</div>}
-              {!hoveredUnit.unit.isBuilding && !hoveredUnit.unit.type.toLowerCase().includes('scv') && 
-               !hoveredUnit.unit.type.toLowerCase().includes('drone') && 
-               !hoveredUnit.unit.type.toLowerCase().includes('probe') && (
-                <div className="text-red-300">Military Unit</div>
+              <div>
+                Team {hoveredUnit.unit.team + 1} ({hoveredUnit.unit.race})
+              </div>
+              <div>
+                Position: ({Math.round(hoveredUnit.unit.x)},{" "}
+                {Math.round(hoveredUnit.unit.y)})
+              </div>
+              {hoveredUnit.unit.isBuilding && (
+                <div className="text-blue-300">Building</div>
               )}
-              {(hoveredUnit.unit.type.toLowerCase().includes('scv') || 
-                hoveredUnit.unit.type.toLowerCase().includes('drone') || 
-                hoveredUnit.unit.type.toLowerCase().includes('probe')) && (
+              {!hoveredUnit.unit.isBuilding &&
+                !hoveredUnit.unit.type.toLowerCase().includes("scv") &&
+                !hoveredUnit.unit.type.toLowerCase().includes("drone") &&
+                !hoveredUnit.unit.type.toLowerCase().includes("probe") && (
+                  <div className="text-red-300">Military Unit</div>
+                )}
+              {(hoveredUnit.unit.type.toLowerCase().includes("scv") ||
+                hoveredUnit.unit.type.toLowerCase().includes("drone") ||
+                hoveredUnit.unit.type.toLowerCase().includes("probe")) && (
                 <div className="text-green-300">Worker</div>
               )}
               {(hoveredUnit.unit.vx !== 0 || hoveredUnit.unit.vy !== 0) && (
-                <div>Velocity: ({hoveredUnit.unit.vx?.toFixed(1)}, {hoveredUnit.unit.vy?.toFixed(1)})</div>
+                <div>
+                  Velocity: ({hoveredUnit.unit.vx?.toFixed(1)},{" "}
+                  {hoveredUnit.unit.vy?.toFixed(1)})
+                </div>
               )}
             </div>
           )}
 
           {/* Time overlay */}
-          <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded">
+          <div className="bg-opacity-70 absolute top-4 left-4 rounded bg-black px-3 py-1 text-white">
             {formatTime(currentTime)} / {formatTime(gameDuration)}
           </div>
 
           {/* Units count */}
-          <div className="absolute top-4 right-4 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+          <div className="bg-opacity-70 absolute top-4 right-4 rounded bg-black px-2 py-1 text-xs text-white">
             {currentUnits.length} units
           </div>
 
           {/* Controls hint */}
           {isFocused && (
-            <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+            <div className="bg-opacity-70 absolute bottom-4 left-4 rounded bg-black px-2 py-1 text-xs text-white">
               Space: Play/Pause | ←→: Skip ±5s | ↑↓: Speed
             </div>
           )}
@@ -518,11 +608,15 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
             <Button variant="outline" size="sm" onClick={handleSkipBackward}>
               <SkipBack className="h-4 w-4" />
             </Button>
-            
+
             <Button onClick={handlePlayPause} size="sm">
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {isPlaying ? (
+                <Pause className="h-4 w-4" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
             </Button>
-            
+
             <Button variant="outline" size="sm" onClick={handleSkipForward}>
               <SkipForward className="h-4 w-4" />
             </Button>
@@ -533,7 +627,7 @@ const PixiReplayViewer: React.FC<PixiReplayViewerProps> = ({ timeSeriesData, gam
               <select
                 value={playbackSpeed}
                 onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
-                className="text-sm border rounded px-2 py-1"
+                className="rounded border px-2 py-1 text-sm"
               >
                 <option value={0.5}>0.5x</option>
                 <option value={1}>1x</option>
