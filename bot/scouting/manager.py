@@ -7,7 +7,7 @@ class ScoutManager:
         self.bot = bot
         self.game_state = game_state
 
-    def update(self): 
+    def execute(self): 
         """Updates the game state with what we see"""
         # Track visible enemies
         for unit in self.bot.enemy_units:
@@ -21,9 +21,3 @@ class ScoutManager:
             if unit.type_id not in self.game_state.enemy_positions:
                 self.game_state.enemy_positions[unit.type_id] = []
             self.game_state.enemy_positions[unit.type_id].append(unit.position)
-        
-        # Log every 2 seconds (44 iterations)
-        if self.bot._total_steps_iterations % 44 == 0 and self.game_state.enemy_unit_counts:
-            print(f"\n[{self.bot.time_formatted}] Enemy Intel:")
-            for unit_type, count in self.game_state.enemy_unit_counts.items():
-                print(f"  - {unit_type.name}: {count}")

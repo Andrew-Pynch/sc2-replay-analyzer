@@ -42,8 +42,8 @@ def main():
         maps.get(SC2_MAP),  # This is a ladder map from Ladder2018Season3
         [Bot(Race.Terran, AndrewBot()), Computer(Race.Zerg, Difficulty.Easy)],
         realtime=False,
-        save_replay_as="test_game.SC2Replay",
-        disable_fog=True,  # Disable fog of war for easier debugging
+        save_replay_as="game.SC2Replay",
+        disable_fog=False,  # Disable fog of war for easier debugging
     )
 
 if __name__ == "__main__":

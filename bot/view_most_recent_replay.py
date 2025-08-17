@@ -20,7 +20,7 @@ from sc2.main import run_replay
 from sc2.observer_ai import ObserverAI
 from sc2.ids.unit_typeid import UnitTypeId
 
-REPLAY_PATH = Path("/home/andrew/Documents/StarCraft II/Replays/test_game.SC2Replay")
+REPLAY_PATH = Path("/home/andrew/Documents/StarCraft II/Replays/game.SC2Replay")
 
 class ReplayViewer(ObserverAI):
     def __init__(self):
